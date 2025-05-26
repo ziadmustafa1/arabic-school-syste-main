@@ -31,7 +31,7 @@ export async function createClient() {
         persistSession: true,
         storageKey: 'sb-auth-token',
         autoRefreshToken: true,
-        detectSessionInUrl: false,
+        detectSessionInUrl: true,
         flowType: 'pkce'
       }
     }

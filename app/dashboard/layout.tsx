@@ -1,29 +1,36 @@
 "use client"
 
-import { cookies } from "next/headers"
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createClient } from "@/lib/supabase/client"
 import { DashboardLayout as MainDashboardLayout } from "@/components/dashboard-layout"
 import { MobileNavigation as MainMobileNavigation } from "@/components/mobile-navigation"
-import { redirect } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
-export default async function Layout({
+export default function Layout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const cookieStore = cookies()
-  const supabase = createServerComponentClient({ cookies: () => cookieStore })
+  const [userRole, setUserRole] = useState<string>("student")
+  const router = useRouter()
+  const supabase = createClient()
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  useEffect(() => {
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        router.push("/auth/login")
+        return
+      }
 
-  if (!session) {
-    redirect("/auth/login")
-  }
+      // Get user role from metadata
+      const role = session.user.user_metadata.role || "student"
+      setUserRole(role)
+    }
 
-  // Get user role from metadata
-  const userRole = session.user.user_metadata.role || "student"
+    checkSession()
+  }, [supabase, router])
 
   return (
     <div className="min-h-screen bg-background">
