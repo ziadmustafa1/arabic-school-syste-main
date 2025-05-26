@@ -31,11 +31,19 @@ type RestrictedPoint = {
   category_name: string
 }
 
+// Define a type for category data
+interface Category {
+  id: number;
+  name: string;
+  default_points: number;
+  is_positive: boolean;
+}
+
 export default function PointsManagementPage() {
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [categories, setCategories] = useState<any[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalPoints: 0,
@@ -68,8 +76,8 @@ export default function PointsManagementPage() {
             variant: "destructive",
           });
         } else {
-          // Set categories
-          setCategories(categoriesResult.data || []);
+          // Set categories and ensure they match the Category type
+          setCategories(categoriesResult.data as Category[] || []);
         }
 
         try {
@@ -159,9 +167,12 @@ export default function PointsManagementPage() {
 
   const handleMultiUserChange = (userIds: string[]) => {
     setSelectedUserIds(userIds)
+    // Also update formData.userCodes here for consistency, comma-separated
+    setFormData(prev => ({ ...prev, userCodes: userIds.join(',') }));
   }
 
   const handleUserCodesChange = (codes: string) => {
+    // This handler will be removed later when the textarea is replaced
     setFormData(prev => ({ ...prev, userCodes: codes }))
   }
 
@@ -170,8 +181,9 @@ export default function PointsManagementPage() {
     setIsSubmitting(true)
 
     try {
-      if (!formData.userCodes.trim()) {
-        throw new Error("يرجى إدخال رمز مستخدم واحد على الأقل")
+      // Use selectedUserIds instead of formData.userCodes for validation
+      if (selectedUserIds.length === 0) {
+        throw new Error("يرجى اختيار مستخدم واحد على الأقل")
       }
 
       if (formData.points <= 0) {
@@ -179,7 +191,8 @@ export default function PointsManagementPage() {
       }
 
       const formDataObj = new FormData()
-      formDataObj.append("userCodes", formData.userCodes)
+      // Append comma-separated user IDs from selectedUserIds
+      formDataObj.append("userCodes", selectedUserIds.join(','))
       formDataObj.append("points", formData.points.toString())
       formDataObj.append("isPositive", formData.isPositive.toString())
       formDataObj.append("categoryId", formData.categoryId)
@@ -205,6 +218,7 @@ export default function PointsManagementPage() {
         categoryId: "",
         description: "",
       })
+      setSelectedUserIds([]); // Also clear selected users in the selector
 
       // Show additional info if there are missing user codes
       if (result.data?.missingUserCodes && result.data.missingUserCodes.length > 0) {
@@ -313,17 +327,13 @@ export default function PointsManagementPage() {
               <CardContent className="px-3 sm:px-6 py-2 sm:py-4">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="userCodes" className="text-sm">رموز المستخدمين</Label>
-                    <Textarea
-                      id="userCodes"
-                      name="userCodes"
-                      placeholder="أدخل رموز المستخدمين مفصولة بفواصل (مثال: ST1234, ST5678)"
-                      value={formData.userCodes}
-                      onChange={handleChange}
-                      className="min-h-[80px] text-sm"
+                    <Label htmlFor="user-selector" className="text-sm">اختيار المستخدمين</Label>
+                    <MultiUserSelector 
+                      values={selectedUserIds}
+                      onChange={handleMultiUserChange}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      أدخل رموز المستخدمين مفصولة بفواصل. يمكنك إضافة نقاط للطلاب أو المعلمين أو أولياء الأمور.
+                    <p className="text-sm text-muted-foreground">
+                      اختر المستخدمين لإضافة نقاط للطلاب أو المعلمين أو أولياء الأمور.
                     </p>
                   </div>
 
@@ -365,7 +375,7 @@ export default function PointsManagementPage() {
 
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 flex-row-reverse">
-                      <Label htmlFor="isPositive" className="text-sm">إضافة نقاط (تشغيل) / خصم نقاط (إيقاف)</Label>
+                      <Label htmlFor="isPositive" className="text-sm ml-2">إضافة نقاط (تشغيل) / خصم نقاط (إيقاف)</Label>
                     <Switch
                       id="isPositive"
                       checked={formData.isPositive}
@@ -609,8 +619,8 @@ function PointsHistoryView() {
                   {transactions.map((transaction) => (
                     <tr key={transaction.id} className="border-t">
                       <td className="p-2 sm:p-3">
-                        <div className="font-medium text-sm">{transaction.users?.full_name}</div>
-                        <div className="text-xs text-muted-foreground">{transaction.users?.user_code}</div>
+                        <div className="font-medium text-sm">{transaction.users?.[0]?.full_name}</div>
+                        <div className="text-xs text-muted-foreground">{transaction.users?.[0]?.user_code}</div>
                       </td>
                       <td className="p-2 sm:p-3">
                         <span
@@ -625,8 +635,8 @@ function PointsHistoryView() {
                         </span>
                       </td>
                       <td className="p-2 sm:p-3 hidden md:table-cell">{transaction.description}</td>
-                      <td className="p-2 sm:p-3 hidden md:table-cell">{transaction.point_categories?.name || "-"}</td>
-                      <td className="p-2 sm:p-3 hidden sm:table-cell">{transaction.creator?.full_name || "-"}</td>
+                      <td className="p-2 sm:p-3 hidden md:table-cell">{transaction.point_categories?.[0]?.name || "-"}</td>
+                      <td className="p-2 sm:p-3 hidden sm:table-cell">{transaction.creator?.[0]?.full_name || "-"}</td>
                       <td className="p-2 sm:p-3 whitespace-nowrap text-xs sm:text-sm">{formatDate(transaction.created_at)}</td>
                     </tr>
                   ))}
@@ -654,9 +664,11 @@ function RestrictionsManagementView() {
   async function fetchRestrictions() {
     setIsLoading(true)
     try {
+      // Explicitly select nested fields with type casting where needed
       const { data, error } = await supabase
         .from("restricted_points")
-        .select(`
+        .select(
+          `
           id,
           user_id,
           category_id,
@@ -666,14 +678,38 @@ function RestrictionsManagementView() {
           created_by,
           users:user_id(full_name, user_code),
           point_categories:category_id(name)
-        `)
+        `,
+        )
         .eq("is_resolved", false)
         .order("created_at", { ascending: false })
 
       if (error) throw error
 
-      // Transform the data for easier rendering
-      const formattedData = data?.map(item => ({
+      // Define inline types for the nested data returned by the query
+      interface UserData {
+        full_name: string | null;
+        user_code: string | null;
+      }
+
+      interface CategoryData {
+        name: string | null;
+      }
+
+      // Define the expected structure of each item in the fetched data array
+      interface FetchedRestrictionItem {
+        id: number;
+        user_id: string;
+        category_id: number;
+        points: number;
+        created_at: string;
+        is_resolved: boolean;
+        created_by: string;
+        users: UserData[] | null; // Supabase returns related data as an array
+        point_categories: CategoryData[] | null; // Supabase returns related data as an array
+      }
+
+      // Transform the data for easier rendering with explicit typing
+      const formattedData = data?.map((item: FetchedRestrictionItem) => ({
         id: item.id,
         user_id: item.user_id,
         category_id: item.category_id,
@@ -681,9 +717,10 @@ function RestrictionsManagementView() {
         created_at: item.created_at,
         is_resolved: item.is_resolved,
         created_by: item.created_by,
-        user_full_name: item.users?.full_name || "غير معروف",
-        user_code: item.users?.user_code || "غير معروف",
-        category_name: item.point_categories?.name || "غير معروف"
+        // Access properties with index [0] and nullish coalescing, handling potential null/undefined arrays
+        user_full_name: item.users?.[0]?.full_name || "غير معروف",
+        user_code: item.users?.[0]?.user_code || "غير معروف",
+        category_name: item.point_categories?.[0]?.name || "غير معروف"
       })) || []
 
       setRestrictions(formattedData)
@@ -713,23 +750,36 @@ function RestrictionsManagementView() {
       if (updateError) throw updateError
       
       // Get the restriction details to notify the user
+      // Explicitly define the expected structure for restrictionData
+      interface FetchedRestrictionDataForNotification {
+        user_id: string;
+        points: number;
+        category_id: number;
+        point_categories: { name: string | null }[] | null; // Should be an array
+      }
+
       const { data: restrictionData } = await supabase
         .from("restricted_points")
-        .select(`
+        .select(
+          `
           user_id,
           points,
           category_id,
           point_categories:category_id(name)
-        `)
+        `,
+        )
         .eq("id", restrictionId)
-        .single()
-      
+        .single() // Use .single() here as we expect one result
+
       if (restrictionData) {
-        // Add a notification for the student
+        // Add a notification for the student - ensure point_categories is accessed safely
+        const notificationData = restrictionData as FetchedRestrictionDataForNotification;
+
         await supabase.from("notifications").insert({
-          user_id: restrictionData.user_id,
+          user_id: notificationData.user_id,
           title: "تم رفع القيد",
-          content: `تم رفع القيد عن ${restrictionData.points} نقطة من فئة "${restrictionData.point_categories?.name || ''}" ويمكنك الآن دفع هذه النقاط.`
+          // Access name with index [0] and nullish coalescing
+          content: `تم رفع القيد عن ${notificationData.points} نقطة من فئة "${notificationData.point_categories?.[0]?.name || ''}" ويمكنك الآن دفع هذه النقاط.`
         })
       }
       

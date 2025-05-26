@@ -22,6 +22,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { toast } from "@/components/ui/use-toast"
 
 // تعريف واجهة المستخدم
 export interface UserItem {
@@ -121,35 +122,64 @@ export function MultiUserSelector({
       const supabase = createClient()
 
       try {
+        // First check if we have a valid session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error("Error checking session:", sessionError)
+          throw new Error("Failed to verify authentication session")
+        }
+
+        if (!session) {
+          console.error("No active session found")
+          throw new Error("Authentication required")
+        }
+
+        // Now proceed with fetching users
         const { data, error } = await supabase
           .from("users")
-          .select("id, full_name, role_id, identifier, user_code")
+          .select("id, full_name, role_id, user_code")
           .in("id", values)
 
         if (error) {
           console.error("Error fetching selected users:", error)
+          throw new Error(error.message)
+        }
+
+        if (!data || data.length === 0) {
+          console.warn("No users found for the provided IDs:", values)
+          setSelectedUsers([])
+          setUserCodes("")
           return
         }
 
-        if (data) {
-          const formattedUsers = data.map(user => ({
-            id: user.id,
-            name: user.full_name,
-            role_id: user.role_id,
-            role_name: getRoleName(user.role_id),
-            identifier: user.identifier
-          }))
-          setSelectedUsers(formattedUsers)
+        const formattedUsers = data.map(user => ({
+          id: user.id,
+          name: user.full_name,
+          role_id: user.role_id,
+          role_name: getRoleName(user.role_id),
+          identifier: user.user_code // Use user_code as the identifier
+        }))
+        setSelectedUsers(formattedUsers)
 
-          // تجميع أكواد المستخدمين
-          const codes = data.map(user => user.user_code).join(", ")
-          setUserCodes(codes)
-          if (onCodesChange) {
-            onCodesChange(codes)
-          }
+        // تجميع أكواد المستخدمين
+        const codes = data.map(user => user.user_code).filter(Boolean).join(", ")
+        setUserCodes(codes)
+        if (onCodesChange) {
+          onCodesChange(codes)
         }
-      } catch (error) {
-        console.error("Error fetching selected users:", error)
+      } catch (error: any) {
+        console.error("Error in fetchSelectedUsers:", error)
+        // Show a more user-friendly error message
+        toast({
+          title: "خطأ في تحميل بيانات المستخدمين",
+          description: error.message || "حدث خطأ أثناء محاولة تحميل بيانات المستخدمين المحددين",
+          variant: "destructive",
+        })
+        // Clear the selection on error
+        setSelectedUsers([])
+        setUserCodes("")
+        onChange([]) // Clear the selection
       } finally {
         setLoading(false)
       }
@@ -169,8 +199,20 @@ export function MultiUserSelector({
   const fetchUsers = async () => {
     setLoading(true)
     try {
-      // معالجة تهيئة supabase باستخدام await
-      const supabase = await createClient()
+      const supabase = createClient()
+
+      // First check if we have a valid session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Error checking session:", sessionError)
+        throw new Error("Failed to verify authentication session")
+      }
+
+      if (!session) {
+        console.error("No active session found")
+        throw new Error("Authentication required")
+      }
 
       let query = supabase
         .from("users")
@@ -192,21 +234,32 @@ export function MultiUserSelector({
 
       if (error) {
         console.error("Error fetching users:", error)
+        throw new Error(error.message)
+      }
+
+      if (!data || data.length === 0) {
+        console.warn("No users found matching the criteria")
+        setUsers([])
         return
       }
 
-      if (data) {
-        const formattedUsers = data.map(user => ({
-          id: user.id,
-          name: user.full_name,
-          role_id: user.role_id,
-          role_name: getRoleName(user.role_id),
-          identifier: user.user_code // استخدام user_code كمعرف
-        }))
-        setUsers(formattedUsers)
-      }
-    } catch (error) {
+      const formattedUsers = data.map(user => ({
+        id: user.id,
+        name: user.full_name,
+        role_id: user.role_id,
+        role_name: getRoleName(user.role_id),
+        identifier: user.user_code // استخدام user_code كمعرف
+      }))
+      setUsers(formattedUsers)
+    } catch (error: any) {
       console.error("Error in fetchUsers:", error)
+      // Show a more user-friendly error message
+      toast({
+        title: "خطأ في تحميل قائمة المستخدمين",
+        description: error.message || "حدث خطأ أثناء محاولة تحميل قائمة المستخدمين",
+        variant: "destructive",
+      })
+      setUsers([])
     } finally {
       setLoading(false)
     }
