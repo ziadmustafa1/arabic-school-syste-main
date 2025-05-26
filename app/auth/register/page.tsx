@@ -32,6 +32,12 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-8">
+      <div className="text-center space-y-2 mb-10">
+          {/* Replace with your logo */}
+          <img src="/rased-logo.svg" alt="Platform Logo" className="mx-auto h-12 w-auto" />
+          <h1 className="text-3xl font-bold">أهلاً بك في منصة رصد</h1>
+          <p className="text-muted-foreground">الرجاء تسجيل الدخول أو إنشاء حساب جديد للمتابعة</p>
+        </div>
       <div className="w-full max-w-md space-y-8 rounded-lg border bg-white p-6 shadow-md">
         <div className="text-center">
           <h1 className="text-2xl font-bold">إنشاء حساب جديد</h1>
