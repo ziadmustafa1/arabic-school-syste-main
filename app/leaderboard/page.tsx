@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Award, Medal, Trophy } from "lucide-react"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 interface User {
@@ -81,7 +82,8 @@ async function getLeaderboard(): Promise<LeaderboardEntry[]> {
 
 export default async function LeaderboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user || null
   console.log("User in LeaderboardPage:", user)
 
   if (!user) {
