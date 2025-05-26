@@ -80,6 +80,10 @@ async function getLeaderboard(): Promise<LeaderboardEntry[]> {
 }
 
 export default async function LeaderboardPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  console.log("User in LeaderboardPage:", user)
+
   const leaderboard = await getLeaderboard()
 
   return (
