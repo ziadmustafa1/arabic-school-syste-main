@@ -25,28 +25,33 @@ interface Transaction {
 async function getLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
     const supabase = await createClient()
+    console.log("Inside getLeaderboard function.")
 
     // Get all users, not just students
+    console.log("Fetching users in getLeaderboard")
     const { data: users, error: usersError } = await supabase
       .from("users")
       .select("id, full_name, user_code, role_id")
 
     if (usersError) {
-      console.error("Error fetching users:", usersError)
+      console.error("Error fetching users in getLeaderboard:", usersError)
       return []
     }
+    console.log(`Fetched ${users?.length} users in getLeaderboard`)
 
     // Now get points for each user
     const userIds = users.map((user: User) => user.id)
+    console.log(`Fetching transactions for ${userIds.length} users in getLeaderboard`)
     const { data: transactions, error: transactionsError } = await supabase
       .from("points_transactions")
       .select("user_id, points, is_positive")
       .in("user_id", userIds)
 
     if (transactionsError) {
-      console.error("Error fetching transactions:", transactionsError)
+      console.error("Error fetching transactions in getLeaderboard:", transactionsError)
       return []
     }
+    console.log(`Fetched ${transactions?.length} transactions in getLeaderboard`)
 
     // Calculate total points for each user
     const pointsByUser: Record<string, number> = {}
@@ -81,16 +86,19 @@ async function getLeaderboard(): Promise<LeaderboardEntry[]> {
 }
 
 export default async function LeaderboardPage() {
+  console.log("Rendering LeaderboardPage")
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user || null
+  const { data: { user } } = await supabase.auth.getUser()
   console.log("User in LeaderboardPage:", user)
 
   if (!user) {
-    redirect('/auth/login') // Redirect to login page if user is not authenticated
+    console.log("User not found, redirecting to /auth/login.")
+    redirect('/auth/login')
   }
 
+  console.log("User is authenticated, fetching leaderboard data.")
   const leaderboard = await getLeaderboard()
+  console.log(`Leaderboard data fetched: ${leaderboard?.length} entries.`)
 
   return (
     <DashboardLayout>
