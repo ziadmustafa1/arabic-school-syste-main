@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 
+// Mark this route as dynamic since it uses cookies
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function Home() {
   try {
     const supabase = await createClient()

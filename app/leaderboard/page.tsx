@@ -164,3 +164,7 @@ export default async function LeaderboardPage() {
     </DashboardLayout>
   )
 }
+
+// Mark this route as dynamic since it uses cookies and authentication
+export const dynamic = 'force-dynamic'
+export const revalidate = 0

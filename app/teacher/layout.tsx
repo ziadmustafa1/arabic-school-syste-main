@@ -4,6 +4,10 @@ import { redirect } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Suspense } from "react"
 
+// Mark this route as dynamic since it uses authentication
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function TeacherLayout({
   children,
 }: {

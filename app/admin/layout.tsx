@@ -7,6 +7,9 @@ import AdminLoadingSkeleton from "@/components/loading-skeletons/admin-skeleton"
 
 // IMPORTANT: Individual admin pages should NOT wrap their content in DashboardLayout
 // as it's already provided by this layout component
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   try {
     // Use the admin auth utility to verify access

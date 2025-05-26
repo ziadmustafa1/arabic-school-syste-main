@@ -3,6 +3,10 @@ import { getDashboardUrl } from "@/lib/utils/auth"
 import { redirect } from "next/navigation"
 import ClientDashboardLayout from "@/components/client-dashboard-layout"
 
+// Mark this route as dynamic since it uses authentication
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function StudentLayout({
   children,
 }: {
