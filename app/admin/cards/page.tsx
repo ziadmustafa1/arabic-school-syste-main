@@ -294,7 +294,7 @@ export default function RechargeCardsPage() {
                 <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm h-10 w-10 sm:w-auto sm:h-10 p-0 sm:p-2">
                   <Link href="/admin/cards/manage" className="flex items-center justify-center w-full h-full">
                     <CreditCard className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">عرض الكروت</span>
+                    <span className="">عرض الكروت</span>
             </Link>
           </Button>
               </TooltipTrigger>
@@ -310,7 +310,7 @@ export default function RechargeCardsPage() {
                 <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm h-10 w-10 sm:w-auto sm:h-10 p-0 sm:p-2">
                   <Link href="/admin/cards/categories" className="flex items-center justify-center w-full h-full">
                     <CreditCard className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">التصنيفات</span>
+                    <span className="">التصنيفات</span>
             </Link>
           </Button>
               </TooltipTrigger>
@@ -326,7 +326,7 @@ export default function RechargeCardsPage() {
                 <Button variant="outline" size="sm" asChild className="text-xs sm:text-sm h-10 w-10 sm:w-auto sm:h-10 p-0 sm:p-2">
                   <Link href="/admin/cards/limits" className="flex items-center justify-center w-full h-full">
                     <CreditCard className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">الحدود</span>
+                    <span className="">الحدود</span>
             </Link>
           </Button>
               </TooltipTrigger>

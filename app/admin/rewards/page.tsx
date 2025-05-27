@@ -449,7 +449,7 @@ export default function AdminRewardsPage() {
 
   return (
     <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="md:flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">إدارة المكافآت</h1>
         
         <div className="flex gap-2">
@@ -679,29 +679,29 @@ export default function AdminRewardsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[50px]">#</TableHead>
-                  <TableHead>اسم المكافأة</TableHead>
-                  <TableHead>الوصف</TableHead>
-                  <TableHead>النقاط</TableHead>
-                  <TableHead>الكمية</TableHead>
-                  <TableHead>الدور</TableHead>
-                  <TableHead>الصورة</TableHead>
-                  <TableHead className="text-left">الإجراءات</TableHead>
+                  <TableHead className="text-center">اسم المكافأة</TableHead>
+                  <TableHead className="text-center">الوصف</TableHead>
+                  <TableHead className="text-center">النقاط</TableHead>
+                  <TableHead className="text-center">الكمية</TableHead>
+                  <TableHead className="w-[150px] text-center">الدور</TableHead>
+                  <TableHead className="text-center">الصورة</TableHead>
+                  <TableHead className="text-center">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRewards.map((reward, index) => (
                   <TableRow key={reward.id}>
                     <TableCell>{index + 1}</TableCell>
-                    <TableCell className="font-medium">{reward.name}</TableCell>
-                    <TableCell>{reward.description || "-"}</TableCell>
-                    <TableCell>{reward.points_cost}</TableCell>
-                    <TableCell>{reward.available_quantity}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium text-center">{reward.name}</TableCell>
+                    <TableCell className="text-center">{reward.description || "-"}</TableCell>
+                    <TableCell className="text-center">{reward.points_cost}</TableCell>
+                    <TableCell className="text-center">{reward.available_quantity}</TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <Badge variant={getRoleBadgeVariant(reward.role_id)}>
                         {getRoleName(reward.role_id)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="flex justify-center">
                       {reward.image_url ? (
                         <div className="relative h-10 w-10 rounded overflow-hidden">
                           <img 
@@ -718,7 +718,7 @@ export default function AdminRewardsPage() {
                         <span className="text-muted-foreground text-sm">-</span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="flex justify-center">
                       <div className="flex gap-2">
                         <Button variant="outline" size="icon" onClick={() => handleEdit(reward)}>
                           <Pencil className="h-4 w-4" />

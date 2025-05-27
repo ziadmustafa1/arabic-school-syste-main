@@ -430,7 +430,7 @@ export default function AdminTiersPage() {
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">إدارة الطبقات والمستويات</h1>
+        <h1 className="font-bold px-3">إدارة الطبقات والمستويات</h1>
         <Button onClick={() => openTierDialog()}>
           إضافة طبقة جديدة <PlusCircle className="mr-2 h-4 w-4" />
         </Button>
