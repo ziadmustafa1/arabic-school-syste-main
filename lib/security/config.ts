@@ -66,7 +66,7 @@ export const SENSITIVE_DATA_PATTERNS = [
 
 // Session configuration
 export const SESSION_CONFIG = {
-  EXPIRY_HOURS: 24,        // Session expiry time
-  REFRESH_MINUTES: 15,     // Session refresh interval
-  IDLE_TIMEOUT_MINUTES: 30 // Timeout for inactive sessions
+  EXPIRY_HOURS: 24 * 7,    // 7 days session expiry time
+  REFRESH_MINUTES: 60,     // Refresh session every hour
+  IDLE_TIMEOUT_MINUTES: 120 // 2 hours timeout for inactive sessions
 } 
