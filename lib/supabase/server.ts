@@ -30,12 +30,13 @@ export async function createClient() {
             const cookie = cookieStore.get(name)
             return cookie?.value
           } catch (error) {
-            console.error(`Error getting cookie "${name}" on server:`, error)
+            console.error(`Error getting cookie "${name}":`, error)
             return undefined
           }
         },
         set(name, value, options) {
           try {
+            // Only set cookies in a Server Action or Route Handler
             if (typeof cookieStore.set !== 'function') {
               console.warn(`Cookie "${name}" not set: can only be modified in a Server Action or Route Handler`)
               return
@@ -46,8 +47,7 @@ export async function createClient() {
               path: '/',
               sameSite: 'lax',
               secure: process.env.NODE_ENV === 'production',
-              maxAge: 60 * 60 * 24 * 7, // 7 days instead of 30
-              httpOnly: true // Ensure cookies are httpOnly
+              maxAge: 60 * 60 * 24 * 30 // 30 days for longer persistence
             })
           } catch (error) {
             console.error(`Error setting cookie "${name}":`, error)
