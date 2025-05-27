@@ -204,7 +204,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
               <div className="flex items-center gap-2 sm:gap-4">
                 <div className="text-xs sm:text-sm">
-                  <span className="font-semibold">{userData.name}</span>
+                  <span className="font-semibold pl-3">{userData.name}</span>
                   <span className="ml-2 text-muted-foreground hidden sm:inline">
                     {ROLE_NAMES[userData.role]}
                   </span>

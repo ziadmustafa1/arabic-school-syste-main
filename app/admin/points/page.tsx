@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
 import { Loader2, Plus, TrendingUp, TrendingDown, Users, Award } from "lucide-react"
 import { MultiUserSelector } from "@/components/ui/multi-user-selector"
+import { getCurrentUser } from "@/lib/utils/auth-compat"
 
 type RestrictedPoint = {
   id: number
@@ -129,6 +130,10 @@ export default function PointsManagementPage() {
     fetchData()
   }, []) // Remove supabase from dependency array
 
+  useEffect(() => {
+    getCurrentUser().then(console.log);
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -181,18 +186,52 @@ export default function PointsManagementPage() {
     setIsSubmitting(true)
 
     try {
-      // Use selectedUserIds instead of formData.userCodes for validation
+      // Add more detailed validation messages
       if (selectedUserIds.length === 0) {
-        throw new Error("يرجى اختيار مستخدم واحد على الأقل")
+        toast({
+          title: "خطأ في البيانات",
+          description: "يرجى اختيار مستخدم واحد على الأقل",
+          variant: "destructive",
+        })
+        return
       }
 
-      if (formData.points <= 0) {
-        throw new Error("يجب أن تكون قيمة النقاط أكبر من صفر")
+      if (!formData.points || formData.points <= 0) {
+        toast({
+          title: "خطأ في البيانات",
+          description: "يجب أن تكون قيمة النقاط أكبر من صفر",
+          variant: "destructive",
+        })
+        return
       }
+
+      // Get user codes for the selected user IDs
+      const { data: users, error: usersError } = await supabase
+        .from("users")
+        .select("user_code")
+        .in("id", selectedUserIds)
+
+      if (usersError) {
+        throw new Error("حدث خطأ أثناء جلب بيانات المستخدمين")
+      }
+
+      if (!users || users.length === 0) {
+        throw new Error("لم يتم العثور على بيانات المستخدمين المحددين")
+      }
+
+      const userCodes = users.map(user => user.user_code).filter(Boolean).join(',')
+
+      // Log the data being sent for debugging
+      console.log("Sending data:", {
+        userCodes,
+        points: formData.points,
+        isPositive: formData.isPositive,
+        categoryId: formData.categoryId,
+        description: formData.description
+      })
 
       const formDataObj = new FormData()
-      // Append comma-separated user IDs from selectedUserIds
-      formDataObj.append("userCodes", selectedUserIds.join(','))
+      formDataObj.append("userCodes", userCodes)
       formDataObj.append("points", formData.points.toString())
       formDataObj.append("isPositive", formData.isPositive.toString())
       formDataObj.append("categoryId", formData.categoryId)
@@ -201,7 +240,8 @@ export default function PointsManagementPage() {
       const result = await batchAddPoints(formDataObj)
 
       if (!result.success) {
-        throw new Error(result.message)
+        console.error("Error from batchAddPoints:", result)
+        throw new Error(result.message || "حدث خطأ غير معروف أثناء إضافة النقاط")
       }
 
       toast({
@@ -218,7 +258,7 @@ export default function PointsManagementPage() {
         categoryId: "",
         description: "",
       })
-      setSelectedUserIds([]); // Also clear selected users in the selector
+      setSelectedUserIds([])
 
       // Show additional info if there are missing user codes
       if (result.data?.missingUserCodes && result.data.missingUserCodes.length > 0) {
@@ -238,6 +278,7 @@ export default function PointsManagementPage() {
         })
       }
     } catch (error: any) {
+      console.error("Error in handleSubmit:", error)
       toast({
         title: "فشلت العملية",
         description: error.message || "حدث خطأ أثناء تنفيذ العملية. يرجى التحقق من البيانات والمحاولة مرة أخرى",
@@ -607,22 +648,22 @@ function PointsHistoryView() {
               <table className="w-full text-sm">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="p-2 sm:p-3 text-right">المستخدم</th>
-                    <th className="p-2 sm:p-3 text-right">النقاط</th>
-                    <th className="p-2 sm:p-3 text-right hidden md:table-cell">الوصف</th>
-                    <th className="p-2 sm:p-3 text-right hidden md:table-cell">الفئة</th>
-                    <th className="p-2 sm:p-3 text-right hidden sm:table-cell">بواسطة</th>
-                    <th className="p-2 sm:p-3 text-right">التاريخ</th>
+                    <th className="p-2 sm:p-3 text-center">المستخدم</th>
+                    <th className="p-2 sm:p-3 text-center">النقاط</th>
+                    <th className="p-2 sm:p-3 text-center hidden md:table-cell">الوصف</th>
+                    <th className="p-2 sm:p-3 text-center hidden md:table-cell">الفئة</th>
+                    <th className="p-2 sm:p-3 text-center hidden sm:table-cell">بواسطة</th>
+                    <th className="p-2 sm:p-3 text-center">التاريخ</th>
                   </tr>
                 </thead>
                 <tbody>
                   {transactions.map((transaction) => (
                     <tr key={transaction.id} className="border-t">
-                      <td className="p-2 sm:p-3">
-                        <div className="font-medium text-sm">{transaction.users?.[0]?.full_name}</div>
-                        <div className="text-xs text-muted-foreground">{transaction.users?.[0]?.user_code}</div>
+                      <td className="p-2 sm:p-3 text-center">
+                        <div className="font-medium text-sm">{transaction.users?.full_name}</div>
+                        <div className="text-xs text-muted-foreground">{transaction.users?.user_code}</div>
                       </td>
-                      <td className="p-2 sm:p-3">
+                      <td className="p-2 sm:p-3 text-center">
                         <span
                           className={
                             transaction.is_positive
@@ -634,10 +675,10 @@ function PointsHistoryView() {
                           {transaction.points}
                         </span>
                       </td>
-                      <td className="p-2 sm:p-3 hidden md:table-cell">{transaction.description}</td>
-                      <td className="p-2 sm:p-3 hidden md:table-cell">{transaction.point_categories?.[0]?.name || "-"}</td>
-                      <td className="p-2 sm:p-3 hidden sm:table-cell">{transaction.creator?.[0]?.full_name || "-"}</td>
-                      <td className="p-2 sm:p-3 whitespace-nowrap text-xs sm:text-sm">{formatDate(transaction.created_at)}</td>
+                      <td className="p-2 sm:p-3 text-center hidden md:table-cell">{transaction.description}</td>
+                      <td className="p-2 sm:p-3 text-center hidden md:table-cell">{transaction.point_categories?.name || "-"}</td>
+                      <td className="p-2 sm:p-3 text-center hidden sm:table-cell">{transaction.creator?.full_name || "-"}</td>
+                      <td className="p-2 sm:p-3 text-center whitespace-nowrap text-xs sm:text-sm">{formatDate(transaction.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -664,11 +705,9 @@ function RestrictionsManagementView() {
   async function fetchRestrictions() {
     setIsLoading(true)
     try {
-      // Explicitly select nested fields with type casting where needed
       const { data, error } = await supabase
         .from("restricted_points")
-        .select(
-          `
+        .select(`
           id,
           user_id,
           category_id,
@@ -678,38 +717,14 @@ function RestrictionsManagementView() {
           created_by,
           users:user_id(full_name, user_code),
           point_categories:category_id(name)
-        `,
-        )
+        `)
         .eq("is_resolved", false)
         .order("created_at", { ascending: false })
 
       if (error) throw error
 
-      // Define inline types for the nested data returned by the query
-      interface UserData {
-        full_name: string | null;
-        user_code: string | null;
-      }
-
-      interface CategoryData {
-        name: string | null;
-      }
-
-      // Define the expected structure of each item in the fetched data array
-      interface FetchedRestrictionItem {
-        id: number;
-        user_id: string;
-        category_id: number;
-        points: number;
-        created_at: string;
-        is_resolved: boolean;
-        created_by: string;
-        users: UserData[] | null; // Supabase returns related data as an array
-        point_categories: CategoryData[] | null; // Supabase returns related data as an array
-      }
-
-      // Transform the data for easier rendering with explicit typing
-      const formattedData = data?.map((item: FetchedRestrictionItem) => ({
+      // Transform the data for easier rendering
+      const formattedData = data?.map(item => ({
         id: item.id,
         user_id: item.user_id,
         category_id: item.category_id,
@@ -717,10 +732,9 @@ function RestrictionsManagementView() {
         created_at: item.created_at,
         is_resolved: item.is_resolved,
         created_by: item.created_by,
-        // Access properties with index [0] and nullish coalescing, handling potential null/undefined arrays
-        user_full_name: item.users?.[0]?.full_name || "غير معروف",
-        user_code: item.users?.[0]?.user_code || "غير معروف",
-        category_name: item.point_categories?.[0]?.name || "غير معروف"
+        user_full_name: item.users?.full_name || "غير معروف",
+        user_code: item.users?.user_code || "غير معروف",
+        category_name: item.point_categories?.name || "غير معروف"
       })) || []
 
       setRestrictions(formattedData)
@@ -750,36 +764,23 @@ function RestrictionsManagementView() {
       if (updateError) throw updateError
       
       // Get the restriction details to notify the user
-      // Explicitly define the expected structure for restrictionData
-      interface FetchedRestrictionDataForNotification {
-        user_id: string;
-        points: number;
-        category_id: number;
-        point_categories: { name: string | null }[] | null; // Should be an array
-      }
-
       const { data: restrictionData } = await supabase
         .from("restricted_points")
-        .select(
-          `
+        .select(`
           user_id,
           points,
           category_id,
           point_categories:category_id(name)
-        `,
-        )
+        `)
         .eq("id", restrictionId)
-        .single() // Use .single() here as we expect one result
-
+        .single()
+      
       if (restrictionData) {
-        // Add a notification for the student - ensure point_categories is accessed safely
-        const notificationData = restrictionData as FetchedRestrictionDataForNotification;
-
+        // Add a notification for the student
         await supabase.from("notifications").insert({
-          user_id: notificationData.user_id,
+          user_id: restrictionData.user_id,
           title: "تم رفع القيد",
-          // Access name with index [0] and nullish coalescing
-          content: `تم رفع القيد عن ${notificationData.points} نقطة من فئة "${notificationData.point_categories?.[0]?.name || ''}" ويمكنك الآن دفع هذه النقاط.`
+          content: `تم رفع القيد عن ${restrictionData.points} نقطة من فئة "${restrictionData.point_categories?.name || ''}" ويمكنك الآن دفع هذه النقاط.`
         })
       }
       
@@ -840,24 +841,24 @@ function RestrictionsManagementView() {
               <table className="w-full text-sm">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="p-2 sm:p-3 text-right">الطالب</th>
-                    <th className="p-2 sm:p-3 text-right">فئة النقاط</th>
-                    <th className="p-2 sm:p-3 text-right">النقاط</th>
-                    <th className="p-2 sm:p-3 text-right hidden sm:table-cell">تاريخ القيد</th>
-                    <th className="p-2 sm:p-3 text-right">الإجراءات</th>
+                    <th className="p-2 sm:p-3 text-center">الطالب</th>
+                    <th className="p-2 sm:p-3 text-center">فئة النقاط</th>
+                    <th className="p-2 sm:p-3 text-center">النقاط</th>
+                    <th className="p-2 sm:p-3 text-center hidden sm:table-cell">تاريخ القيد</th>
+                    <th className="p-2 sm:p-3 text-center">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
                   {restrictions.map((restriction) => (
                     <tr key={restriction.id} className="border-t">
-                      <td className="p-2 sm:p-3">
+                      <td className="p-2 sm:p-3 text-center">
                         <div className="font-medium text-sm">{restriction.user_full_name}</div>
                         <div className="text-xs text-muted-foreground">{restriction.user_code}</div>
                       </td>
-                      <td className="p-2 sm:p-3 text-sm">{restriction.category_name}</td>
-                      <td className="p-2 sm:p-3 text-destructive font-medium">{restriction.points}</td>
-                      <td className="p-2 sm:p-3 text-xs sm:text-sm hidden sm:table-cell">{formatDate(restriction.created_at)}</td>
-                      <td className="p-2 sm:p-3">
+                      <td className="p-2 sm:p-3 text-sm text-center">{restriction.category_name}</td>
+                      <td className="p-2 sm:p-3 text-destructive font-medium text-center">{restriction.points}</td>
+                      <td className="p-2 sm:p-3 text-xs sm:text-sm text-center hidden sm:table-cell">{formatDate(restriction.created_at)}</td>
+                      <td className="p-2 sm:p-3 text-center">
                         <Button 
                           size="sm" 
                           onClick={() => resolveRestriction(restriction.id)}
