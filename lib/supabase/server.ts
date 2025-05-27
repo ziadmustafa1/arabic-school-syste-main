@@ -30,7 +30,7 @@ export async function createClient() {
             const cookie = cookieStore.get(name)
             return cookie?.value
           } catch (error) {
-            console.error(`Error getting cookie "${name}":`, error)
+            console.error(`Error getting cookie "${name}" on server:`, error)
             return undefined
           }
         },
