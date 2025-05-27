@@ -18,6 +18,9 @@ export default async function Layout({
     data: { session },
   } = await supabase.auth.getSession()
 
+  // Add logging here to check session status on the server
+  console.log('Dashboard Layout: Session check result:', session ? 'Authenticated' : 'Not Authenticated')
+
   if (!session) {
     redirect("/auth/login")
   }

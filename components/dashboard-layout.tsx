@@ -20,9 +20,10 @@ const FALLBACK_DATA = {
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  userRole: string;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
   // State for loading and data
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
