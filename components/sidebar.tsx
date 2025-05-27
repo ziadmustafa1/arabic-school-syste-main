@@ -487,6 +487,7 @@ export function Sidebar({ onClose }: SidebarProps) {
               <TooltipTrigger asChild>
                 <Link
                   href="/api/auth/logout"
+                  prefetch={false}
                   className={cn(
                     "flex items-center gap-2 sm:gap-3 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-red-500 transition-all hover:bg-red-100",
                     isCollapsed && "justify-center px-1 sm:px-2",

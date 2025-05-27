@@ -217,7 +217,7 @@ export function MobileMenu({ userRole = "student" }: MobileMenuProps) {
           })}
         </nav>
         <div className="p-4 border-t">
-          <Link href="/api/auth/logout">
+          <Link href="/api/auth/logout" prefetch={false}>
             <Button variant="outline" className="w-full h-12 text-base">
               تسجيل الخروج
             </Button>

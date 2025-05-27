@@ -47,7 +47,8 @@ export async function createClient() {
               path: '/',
               sameSite: 'lax',
               secure: process.env.NODE_ENV === 'production',
-              maxAge: 60 * 60 * 24 * 30 // 30 days for longer persistence
+              maxAge: 60 * 60 * 24 * 30, // 30 days
+              httpOnly: true // Re-added httpOnly for security
             })
           } catch (error) {
             console.error(`Error setting cookie "${name}":`, error)

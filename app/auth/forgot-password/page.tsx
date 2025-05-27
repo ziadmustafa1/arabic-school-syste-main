@@ -1,11 +1,10 @@
-import React from 'react'
+import React from 'react';
 
-function page() {
+export default function ForgotPasswordPage() {
   return (
     <div>
-        <h1>Forgot Password</h1>
+      <h1>Forgot Password</h1>
+      <p>Password reset form will go here.</p>
     </div>
-  )
+  );
 }
-
-export default page

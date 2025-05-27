@@ -2,22 +2,13 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  try {
-    // Create a Supabase client configured for middleware
-    const res = NextResponse.next()
-    const supabase = createMiddlewareClient({ req: request, res })
-    
-    // Refresh session if it exists (but don't create a new one)
-    // Using getUser is more secure than getSession
-    await supabase.auth.getUser()
-    
-    return res
-  } catch (error) {
-    console.error('Middleware error:', error)
-    // Return the original response even if there's an error to avoid breaking navigation
-    return NextResponse.next()
-  }
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req, res })
+
+  await supabase.auth.getSession()
+
+  return res
 }
 
 // Specify which routes the middleware should run on
