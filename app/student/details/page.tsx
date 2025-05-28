@@ -13,7 +13,6 @@ interface StudentDetails {
   id: string
   full_name: string
   email: string
-  phone_number: string
   gender: string
   address: string
   birth_date: string
@@ -50,7 +49,6 @@ export default function StudentDetailsPage() {
             id,
             full_name,
             email,
-            phone_number,
             gender,
             address,
             birth_date,
@@ -193,7 +191,7 @@ export default function StudentDetailsPage() {
                     <Phone className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">رقم الهاتف</p>
-                      <p className="font-medium">{studentData.phone_number || "غير محدد"}</p>
+                      <p className="font-medium">غير متوفر</p>
                     </div>
                   </div>
                   
