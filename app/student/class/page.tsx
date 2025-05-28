@@ -40,7 +40,7 @@ export default function ClassesPage() {
         
         // Get student's classes
         const { data, error } = await supabase
-          .from("student_classes")
+          .from("class_student")
           .select(`
             class:class_id (
               id,
@@ -53,8 +53,48 @@ export default function ClassesPage() {
           `)
           .eq("student_id", user.id)
         
-        if (error) {
-          throw error
+        // If that query failed, try with user_id instead of student_id
+        if (error && error.message.includes("column class_student.student_id does not exist")) {
+          console.log("Trying with user_id instead of student_id");
+          const { data: altData, error: altError } = await supabase
+            .from("class_student")
+            .select(`
+              class:class_id (
+                id,
+                name,
+                grade,
+                academic_year,
+                semester,
+                teacher:teacher_id (full_name)
+              )
+            `)
+            .eq("user_id", user.id);
+            
+          if (altError) {
+            throw altError;
+          }
+          
+          if (altData && altData.length > 0) {
+            const formattedClasses = altData.map(item => {
+              // Safely access properties with optional chaining
+              return {
+                id: item.class?.id || 0,
+                name: item.class?.name || "غير معروف",
+                grade: item.class?.grade || "",
+                academic_year: item.class?.academic_year || "",
+                semester: item.class?.semester || "",
+                teacher_name: item.class?.teacher?.full_name || "غير محدد",
+                students_count: 0 // We'll get this in a future enhancement
+              };
+            });
+            
+            setClasses(formattedClasses);
+            return; // Exit early since we have data
+          }
+        }
+        
+        if (error && !error.message.includes("column class_student.student_id does not exist")) {
+          throw error;
         }
         
         if (data && data.length > 0) {
