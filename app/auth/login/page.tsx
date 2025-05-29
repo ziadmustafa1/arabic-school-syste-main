@@ -11,7 +11,6 @@ import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createClient } from "@/lib/supabase/client"
-import { ResetAuthButton } from "@/components/reset-auth-button"
 
 // Create a client component for the login form
 function LoginForm() {
@@ -213,7 +212,6 @@ function LoginForm() {
               إنشاء حساب جديد
             </Link>
           </div>
-          <ResetAuthButton className="mt-2" />
         </CardFooter>
       </Card>
     </div>
