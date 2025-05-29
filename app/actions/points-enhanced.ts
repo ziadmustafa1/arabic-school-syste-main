@@ -175,17 +175,46 @@ export async function batchAddPoints(formData: FormData) {
     const points = Number.parseInt(formData.get("points") as string)
     const isPositive = formData.get("isPositive") === "true"
     const categoryId = formData.get("categoryId") as string ? Number.parseInt(formData.get("categoryId") as string) : null
+    const itemId = formData.get("itemId") as string ? Number.parseInt(formData.get("itemId") as string) : null
     const description = formData.get("description") as string
 
     if (userCodes.length === 0) {
       return { success: false, message: "يجب إدخال رمز مستخدم واحد على الأقل" }
     }
 
-    // Calculate final points value and get category details
+    // Calculate final points value and get category/item details
     let finalPoints = points;
     let categoryDetails = null;
+    let itemDetails = null;
+    let finalDescription = description;
     
-    if (categoryId) {
+    // If item is selected, get item details
+    if (itemId) {
+      // Get item details
+      const { data: itemData } = await supabase
+        .from("point_category_items")
+        .select("*")
+        .eq("id", itemId)
+        .single();
+      
+      // Store item details for later use
+      itemDetails = itemData;
+      
+      // If item exists and no points were specified, use the item's points
+      if (itemData) {
+        // If points is 0 or not specified, use item points
+        if (!points || points <= 0) {
+          finalPoints = itemData.points;
+        }
+        
+        // If no description was provided, use item name
+        if (!description || description.trim() === "") {
+          finalDescription = itemData.name;
+        }
+      }
+    }
+    // If only category is specified (no item)
+    else if (categoryId) {
       // Get category details including mandatory/restricted status
       const { data: categoryData } = await supabase
         .from("point_categories")
@@ -229,9 +258,10 @@ export async function batchAddPoints(formData: FormData) {
     const pointsTransactions = users.map((user) => ({
       user_id: user.id,
       category_id: categoryId,
+      item_id: itemId,  // Add the item_id to the transaction
       points: finalPoints,
       is_positive: isPositive,
-      description: description || (isPositive ? "إضافة نقاط" : "خصم نقاط"),
+      description: finalDescription || (isPositive ? "إضافة نقاط" : "خصم نقاط"),
       created_by: session.user.id,
     }))
 
