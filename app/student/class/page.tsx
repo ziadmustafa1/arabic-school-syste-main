@@ -7,7 +7,7 @@ import { Loader2, ChevronLeft, Users, School } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
-import { BackButton } from "@/components/BackButton"
+import { BackButton } from "@/components/back-button"
 
 interface ClassData {
   id: number
@@ -129,7 +129,7 @@ export default function ClassesPage() {
                 console.log("Trying final approach: fetch all classes and filter client-side");
                 try {
                   const { data: allClasses, error: allClassesError } = await supabase
-                    .from("classes")
+              .from("classes")
                     .select("id, name, academic_year, semester")
                     .limit(50); // Limit to avoid huge data transfer
                     
@@ -221,18 +221,18 @@ export default function ClassesPage() {
                   // Get teacher name if available from our mapping
                   const teacherName = teachersByClassId[item.id] || "غير محدد";
                   
-                  return {
-                    id: item.id,
-                    name: item.name || "غير معروف",
+                return {
+                  id: item.id,
+                  name: item.name || "غير معروف",
                     grade: formatGrade(null, item.academic_year),
-                    academic_year: item.academic_year || "",
-                    semester: item.semester || "",
+                  academic_year: item.academic_year || "",
+                  semester: item.semester || "",
                     teacher_name: teacherName,
-                    students_count: 0
-                  };
-                });
-                
-                setClasses(formattedClasses)
+                  students_count: 0
+                };
+              });
+              
+              setClasses(formattedClasses)
               }
             } catch (queryErr) {
               console.error("Class detail query error:", queryErr)
@@ -247,14 +247,14 @@ export default function ClassesPage() {
             console.log("No classes found for user, trying to get sample classes")
             
             try {
-              const { data: sampleClassesData, error: sampleClassesError } = await supabase
-                .from("classes")
+            const { data: sampleClassesData, error: sampleClassesError } = await supabase
+              .from("classes")
                 .select("id, name, academic_year, semester")
-                .limit(5)
-              
+              .limit(5)
+            
               console.log("Sample classes result:", sampleClassesError ? "Error" : (sampleClassesData ? `Found ${sampleClassesData?.length} classes` : "No data"))
-              
-              if (!sampleClassesError && sampleClassesData && sampleClassesData.length > 0) {
+            
+            if (!sampleClassesError && sampleClassesData && sampleClassesData.length > 0) {
                 // Use the same formatGrade function as defined earlier
                 const formatGrade = (grade: string | null, academicYear: string | null) => {
                   if (!academicYear) return "غير محددة";
@@ -280,18 +280,18 @@ export default function ClassesPage() {
                 };
                 
                 const formattedClasses = sampleClassesData.map((item: any) => {
-                  return {
-                    id: item.id,
-                    name: item.name || "غير معروف (عينة)",
+                return {
+                  id: item.id,
+                  name: item.name || "غير معروف (عينة)",
                     grade: formatGrade(null, item.academic_year),
-                    academic_year: item.academic_year || "",
-                    semester: item.semester || "",
+                  academic_year: item.academic_year || "",
+                  semester: item.semester || "",
                     teacher_name: "غير محدد",
-                    students_count: 0
-                  };
-                });
-                
-                setClasses(formattedClasses)
+                  students_count: 0
+                };
+              });
+              
+              setClasses(formattedClasses)
               }
             } catch (sampleErr) {
               console.error("Error fetching sample classes:", sampleErr);

@@ -6,7 +6,7 @@ import { Loader2, User, GraduationCap, Calendar, Mail, Phone, MapPin, Book } fro
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "@/components/ui/use-toast"
-import { BackButton } from "@/components/BackButton"
+import { BackButton } from "@/components/back-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface StudentDetails {

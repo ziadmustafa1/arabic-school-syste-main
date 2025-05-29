@@ -461,15 +461,15 @@ export default function NotificationsPage() {
                             )}
                             {/* Show delete button only for non-students */}
                             {!isStudent() && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteNotification(notification.id)}
-                                disabled={deleting === notification.id}
-                                className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              >
-                                {deleting === notification.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "حذف"}
-                              </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteNotification(notification.id)}
+                              disabled={deleting === notification.id}
+                              className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              {deleting === notification.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "حذف"}
+                            </Button>
                             )}
                           </div>
                         </div>

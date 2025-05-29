@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,6 +22,7 @@ import { Progress } from "@/components/ui/progress"
 import { showSuccessToast, showErrorToast, showActionSuccessToast, showActionErrorToast } from "@/lib/utils/toast-messages"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { getUserMedals } from "@/app/actions/medals"
+import { getUserTierInfo } from "@/lib/actions/tiers"
 
 interface UserBadge {
   id: number
@@ -30,6 +31,15 @@ interface UserBadge {
   image_url: string | null
   points_threshold: number
   badge_type: string
+  awarded_at: string
+}
+
+// Add interface for medals
+interface UserMedal {
+  id: number
+  name: string
+  description?: string | null
+  image_url?: string | null
   awarded_at: string
 }
 
@@ -44,6 +54,7 @@ export default function ProfilePage() {
   const [userBadges, setUserBadges] = useState<UserBadge[]>([])
   const [userPoints, setUserPoints] = useState(0)
   const [userLevel, setUserLevel] = useState({ level: 0, nextLevel: 0, progress: 0 })
+  const [userTier, setUserTier] = useState<any>(null)
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
@@ -56,7 +67,12 @@ export default function ProfilePage() {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [showProfileDialog, setShowProfileDialog] = useState(false)
-  const [userMedals, setUserMedals] = useState([])
+  const [userMedals, setUserMedals] = useState<UserMedal[]>([])
+  // Add state for validation errors
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({})
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({})
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -73,6 +89,17 @@ export default function ProfilePage() {
         }
         
         setUser(currentUser)
+        
+        // Fetch user tier information
+        try {
+          const tierResult = await getUserTierInfo(currentUser.id)
+          if (tierResult.success && tierResult.data) {
+            console.log("User tier data:", tierResult.data)
+            setUserTier(tierResult.data)
+          }
+        } catch (tierError) {
+          console.error("Error fetching tier information:", tierError)
+        }
         
         // Get user profile data
         const { data: profile, error: profileError } = await supabase
@@ -277,6 +304,169 @@ export default function ProfilePage() {
     }
   }
 
+  // Add validation functions
+  const validateProfileForm = () => {
+    const errors: Record<string, string> = {}
+    
+    if (!formData.full_name.trim()) {
+      errors.full_name = "الاسم الكامل مطلوب"
+    }
+    
+    setProfileErrors(errors)
+  }
+  
+  const validatePasswordForm = () => {
+    const errors: Record<string, string> = {}
+    
+    if (!passwordData.currentPassword.trim()) {
+      errors.currentPassword = "كلمة المرور الحالية مطلوبة"
+    }
+    
+    if (!passwordData.newPassword.trim()) {
+      errors.newPassword = "كلمة المرور الجديدة مطلوبة"
+    } else if (passwordData.newPassword.length < 6) {
+      errors.newPassword = "كلمة المرور يجب أن تكون على الأقل 6 أحرف"
+    }
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      errors.confirmPassword = "كلمات المرور غير متطابقة"
+    }
+    
+    setPasswordErrors(errors)
+  }
+
+  // Get tier badge color based on tier name
+  const getTierColor = (tierName: string) => {
+    const tierColors: Record<string, string> = {
+      'برونزية': 'bg-amber-100 text-amber-800',
+      'فضية': 'bg-gray-100 text-gray-800',
+      'ذهبية': 'bg-yellow-100 text-yellow-800',
+      'بلاتينية': 'bg-slate-100 text-slate-800',
+    }
+    
+    return tierColors[tierName] || 'bg-primary-100 text-primary-800'
+  }
+
+  // Add file upload handler
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+    
+    const file = e.target.files[0]
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "نوع ملف غير صالح",
+        description: "يرجى اختيار صورة بتنسيق JPEG أو PNG أو GIF أو WebP",
+        variant: "destructive"
+      })
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+    
+    const fileSize = file.size / 1024 / 1024 // in MB
+    
+    if (fileSize > 5) {
+      toast({
+        title: "الملف كبير جداً",
+        description: "حجم الصورة يجب أن يكون أقل من 5 ميجابايت",
+        variant: "destructive"
+      })
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+    
+    // Add basic image dimensions validation
+    try {
+      const imageDimensions = await getImageDimensions(file)
+      if (imageDimensions.width < 100 || imageDimensions.height < 100) {
+        toast({
+          title: "الصورة صغيرة جداً",
+          description: "يجب أن تكون أبعاد الصورة 100×100 بكسل على الأقل",
+          variant: "destructive"
+        })
+        if (fileInputRef.current) fileInputRef.current.value = ''
+        return
+      }
+    } catch (err) {
+      console.warn("Could not validate image dimensions", err)
+      // Continue with upload even if dimension validation fails
+    }
+    
+    try {
+      setUploading(true)
+      toast({
+        title: "جاري تحميل الصورة",
+        description: "يرجى الانتظار..."
+      })
+      
+      // Use the server-side API for uploads instead of direct Supabase upload
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      const response = await fetch('/api/upload-avatar', {
+        method: 'POST',
+        body: formData,
+      })
+      
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.message || "حدث خطأ أثناء تحميل الصورة")
+      }
+      
+      // Use the URL from the server response
+      const avatarUrl = result.url
+      
+      // Update user object locally without making another request
+      if (user) {
+        const updatedMetadata = {
+          ...user.user_metadata,
+          avatar_url: avatarUrl
+        }
+        
+        setUser({
+          ...user,
+          user_metadata: updatedMetadata
+        })
+      }
+      
+      toast({
+        title: "تم تحديث الصورة الشخصية",
+        description: "تم تحديث صورتك الشخصية بنجاح"
+      })
+      
+    } catch (error: any) {
+      console.error("Error uploading image:", error)
+      toast({
+        title: "خطأ في تحميل الصورة",
+        description: error.message || "حدث خطأ أثناء تحميل الصورة",
+        variant: "destructive"
+      })
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+  
+  // Helper function to get image dimensions
+  const getImageDimensions = (file: File): Promise<{width: number, height: number}> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        resolve({
+          width: img.width,
+          height: img.height
+        })
+      }
+      img.onerror = () => {
+        reject(new Error("Could not load image"))
+      }
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -290,6 +480,15 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout>
+      {/* Hidden file input */}
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="image/*"
+      />
+      
       <div className="container mx-auto py-6 px-4 md:px-6 max-w-4xl">
         <h1 className="text-3xl font-bold mb-6 text-primary">الملف الشخصي</h1>
 
@@ -299,13 +498,23 @@ export default function ProfilePage() {
             <CardHeader className="bg-muted/50 flex flex-col items-center justify-center py-8">
               <div className="relative mb-4">
                 <Avatar className="h-24 w-24 border-4 border-background">
-                  <AvatarImage src={user?.user_metadata?.avatar_url || ""} />
+                  <AvatarImage src={user?.user_metadata?.avatar_url || ""} alt={formData.full_name} />
                   <AvatarFallback className="text-4xl">
                     <User className="h-12 w-12" />
                   </AvatarFallback>
                 </Avatar>
-                <Button size="icon" variant="secondary" className="absolute bottom-0 right-0 rounded-full h-8 w-8">
-                  <Camera className="h-4 w-4" />
+                <Button 
+                  size="icon" 
+                  variant="secondary" 
+                  className="absolute bottom-0 right-0 rounded-full h-8 w-8"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
                   <span className="sr-only">تغيير الصورة</span>
                 </Button>
               </div>
@@ -317,6 +526,17 @@ export default function ProfilePage() {
                   {getLevelIcon()}
                   <span>المستوى {userLevel.level}</span>
                 </Badge>
+                
+                {/* Add tier badge */}
+                {userTier && userTier.currentTier && (
+                  <Badge 
+                    variant="outline" 
+                    className={`flex items-center gap-1 text-sm py-1.5 ${getTierColor(userTier.currentTier.name)}`}
+                  >
+                    <Trophy className="h-4 w-4" />
+                    <span>الطبقة: {userTier.currentTier.name}</span>
+                  </Badge>
+                )}
                 
                 <Badge variant="outline" className="bg-amber-50 text-amber-700 flex items-center gap-1 text-sm py-1.5">
                   <Trophy className="h-4 w-4" />
@@ -428,6 +648,19 @@ export default function ProfilePage() {
                           {userLevel.progress}% نحو المستوى {userLevel.nextLevel}
                         </p>
                         <Progress value={userLevel.progress} className="h-2" />
+                        
+                        {/* Add tier information */}
+                        {userTier && userTier.currentTier && (
+                          <div className="mt-4 flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">الطبقة:</span>
+                            <Badge 
+                              variant="outline" 
+                              className={getTierColor(userTier.currentTier.name)}
+                            >
+                              {userTier.currentTier.name}
+                            </Badge>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                     

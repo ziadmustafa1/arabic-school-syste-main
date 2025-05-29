@@ -91,18 +91,17 @@ export async function createClient() {
 // This function creates a Supabase client with admin privileges using the service role key
 export async function createAdminClient() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable")
-    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY")
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for admin operations")
   }
-  
+
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
-      },
+      }
     }
   )
 } 
