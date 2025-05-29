@@ -24,9 +24,10 @@ interface MobileNotificationProps {
   notification: Notification
   onMarkAsRead: (id: number | string) => void
   onDelete: (id: number | string) => void
+  isStudent?: boolean
 }
 
-export function MobileNotification({ notification, onMarkAsRead, onDelete }: MobileNotificationProps) {
+export function MobileNotification({ notification, onMarkAsRead, onDelete, isStudent = false }: MobileNotificationProps) {
   const [isDeleting, setIsDeleting] = React.useState(false)
   const [isReading, setIsReading] = React.useState(false)
   const [swipeOffset, setSwipeOffset] = React.useState(0)
@@ -151,15 +152,18 @@ export function MobileNotification({ notification, onMarkAsRead, onDelete }: Mob
             <Check className="h-4 w-4" />
           </Button>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className="h-10 bg-destructive/10 hover:bg-destructive/20 text-destructive"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {/* Show delete button only for non-students */}
+        {!isStudent && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="h-10 bg-destructive/10 hover:bg-destructive/20 text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   )

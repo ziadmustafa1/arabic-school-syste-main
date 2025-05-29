@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Loader2, AlertCircle } from "lucide-react"
 import Link from "next/link"
+import React from "react"
 
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { MobileNotification } from "@/components/mobile-notification"
@@ -39,6 +40,11 @@ export default function NotificationsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const supabase = createClient()
 
+  // Add check for student role
+  const isStudent = React.useCallback(() => {
+    return currentUser?.role_id === 1
+  }, [currentUser?.role_id])
+
   useEffect(() => {
     // Get current user
     async function initUser() {
@@ -70,6 +76,14 @@ export default function NotificationsPage() {
         
       if (userData?.role_id === 4) { // Assuming 4 is admin role
         setUserIsAdmin(true)
+      }
+
+      // Store user's role in state for checking permissions
+      if (userData) {
+        setCurrentUser((prev: any) => ({
+          ...prev,
+          role_id: userData.role_id
+        }))
       }
     } catch (error) {
       console.error("Error checking user role:", error)
@@ -365,6 +379,7 @@ export default function NotificationsPage() {
                       notification={flexibleNotification}
                       onMarkAsRead={handleMobileMarkAsRead}
                       onDelete={handleMobileDeleteNotification}
+                      isStudent={isStudent()}
                     />
                   );
                 })}
@@ -444,15 +459,18 @@ export default function NotificationsPage() {
                                 )}
                               </Button>
                             )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteNotification(notification.id)}
-                              disabled={deleting === notification.id}
-                              className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              {deleting === notification.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "حذف"}
-                            </Button>
+                            {/* Show delete button only for non-students */}
+                            {!isStudent() && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteNotification(notification.id)}
+                                disabled={deleting === notification.id}
+                                className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                {deleting === notification.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "حذف"}
+                              </Button>
+                            )}
                           </div>
                         </div>
                       );
