@@ -10,8 +10,8 @@ import { Sidebar } from "@/components/sidebar"
 import { Menu, X, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { BackButton } from "@/components/BackButton"
 import { usePathname } from "next/navigation"
+import { BackButton } from "./BackButton"
 
 // Fallback data in case of errors
 const FALLBACK_DATA = {
