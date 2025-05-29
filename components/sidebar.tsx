@@ -33,7 +33,9 @@ import {
   Crown,
   Trophy,
   Star,
-  X
+  X,
+  List,
+  ListFilter
 } from "lucide-react"
 import { 
   Tooltip, 
@@ -179,7 +181,8 @@ export function Sidebar({ onClose }: SidebarProps) {
     
     // Points & Cards group - Highlighted and regrouped
     { title: "إدارة النقاط", href: "/admin/points", icon: Award, roles: [ROLES.ADMIN] },
-    { title: "فئات النقاط", href: "/admin/points-categories", icon: Award, roles: [ROLES.ADMIN] },
+    { title: "إدارة فئات النقاط", href: "/admin/points-categories", icon: List, roles: [ROLES.ADMIN] },
+    { title: "إدارة بنود النقاط", href: "/admin/points-items", icon: ListFilter, roles: [ROLES.ADMIN] },
     { title: "سجلات النقاط", href: "/admin/records", icon: Trophy, roles: [ROLES.ADMIN], description: "إدارة سجلات الإنجازات للمستخدمين" },
     { title: "بطاقات الشحن", href: "/admin/cards", icon: CreditCard, roles: [ROLES.ADMIN], description: "إدارة بطاقات شحن النقاط" },
     { title: "كروت الحسم", href: "/admin/deduction-cards", icon: AlertCircle, roles: [ROLES.ADMIN], description: "إدارة بطاقات خصم النقاط" },
@@ -194,7 +197,6 @@ export function Sidebar({ onClose }: SidebarProps) {
     
     // Reports & System group
     { title: "التقارير", href: "/admin/reports", icon: BarChart3, roles: [ROLES.ADMIN] },
-    { title: "أدوات التصحيح", href: "/admin/debug", icon: Settings, roles: [ROLES.ADMIN], description: "أدوات لتصحيح مشاكل النظام" },
     
     // Teacher menu items
     { title: "الصفوف", href: "/teacher/classes", icon: School, roles: [ROLES.TEACHER] },
