@@ -132,8 +132,8 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center flex-col p-4 bg-muted/40">
       <div className="text-center space-y-2 mb-10">
           {/* Replace with your logo */}
-          <img src="/rased-logo.svg" alt="Platform Logo" className="mx-auto h-12 w-auto" />
-          <h1 className="text-3xl font-bold">أهلاً بك في منصة رصد</h1>
+          <img src="/rased-logo.png" alt="راصد التحفيزية" className="mx-auto h-28 w-auto" />
+          <h1 className="text-3xl font-bold">أهلاً بك في منصة راصد التحفيزية</h1>
           <p className="text-muted-foreground">الرجاء تسجيل الدخول أو إنشاء حساب جديد للمتابعة</p>
         </div>
       <Card className="max-w-md w-full">

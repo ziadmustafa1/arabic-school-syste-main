@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { FocusResetter } from "@/components/focus-resetter"
 import { ResetTheme } from "@/app/reset-theme"
+import { StorageSetup } from "@/app/components/storage-setup"
 
 const tajawal = Tajawal({
   subsets: ["arabic"],
@@ -42,6 +43,7 @@ export default function RootLayout({
           <ResetTheme />
           <FocusResetter />
           <ErrorBoundary>
+            <StorageSetup />
             {children}
           </ErrorBoundary>
           <Toaster />

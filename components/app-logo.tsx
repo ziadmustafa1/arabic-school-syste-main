@@ -13,19 +13,19 @@ interface AppLogoProps {
 }
 
 const logoSizes = {
-  xs: { size: 'h-5 w-5', width: 20, height: 20 },
-  sm: { size: 'h-6 w-6', width: 24, height: 24 },
-  md: { size: 'h-8 w-8', width: 32, height: 32 },
-  lg: { size: 'h-12 w-12', width: 48, height: 48 },
-  xl: { size: 'h-16 w-16', width: 64, height: 64 },
+  xs: { size: 'h-8 w-8', width: 32, height: 32 },
+  sm: { size: 'h-10 w-10', width: 40, height: 40 },
+  md: { size: 'h-12 w-12', width: 48, height: 48 },
+  lg: { size: 'h-20 w-20', width: 80, height: 80 },
+  xl: { size: 'h-24 w-24', width: 96, height: 96 },
 };
 
 const textSizes = {
-  xs: 'text-xs',
-  sm: 'text-sm',
-  md: 'text-base',
-  lg: 'text-lg',
-  xl: 'text-xl',
+  xs: 'text-sm',
+  sm: 'text-base',
+  md: 'text-lg',
+  lg: 'text-xl',
+  xl: 'text-2xl',
 };
 
 export const AppLogo = memo(function AppLogo({ 
@@ -42,8 +42,8 @@ export const AppLogo = memo(function AppLogo({
     <div className={cn("flex items-center gap-2", className)}>
       <div className={cn(sizeClass, "relative")}>
         <Image 
-          src="/rased-logo.svg" 
-          alt="راصد" 
+          src="/rased-logo.png" 
+          alt="راصد"
           width={width}
           height={height}
           priority

@@ -154,15 +154,15 @@ export function MobileNotification({ notification, onMarkAsRead, onDelete, isStu
         )}
         {/* Show delete button only for non-students */}
         {!isStudent && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="h-10 bg-destructive/10 hover:bg-destructive/20 text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="h-10 bg-destructive/10 hover:bg-destructive/20 text-destructive"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
         )}
       </div>
     </div>
