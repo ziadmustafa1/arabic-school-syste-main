@@ -40,11 +40,23 @@ interface Category {
   is_positive: boolean;
 }
 
+// Define a type for category item
+interface CategoryItem {
+  id: number;
+  category_id: number;
+  name: string;
+  description: string | null;
+  points: number;
+  is_active: boolean;
+}
+
 export default function PointsManagementPage() {
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
+  const [categoryItems, setCategoryItems] = useState<CategoryItem[]>([])
+  const [selectedCategoryItems, setSelectedCategoryItems] = useState<CategoryItem[]>([])
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalPoints: 0,
@@ -57,6 +69,7 @@ export default function PointsManagementPage() {
     points: 0,
     isPositive: true,
     categoryId: "",
+    itemId: "",
     description: "",
   })
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
@@ -79,6 +92,27 @@ export default function PointsManagementPage() {
         } else {
           // Set categories and ensure they match the Category type
           setCategories(categoriesResult.data as Category[] || []);
+        }
+
+        // Fetch category items
+        try {
+          const { data: itemsData, error: itemsError } = await supabase
+            .from("point_category_items")
+            .select("*")
+            .order("name");
+
+          if (itemsError) {
+            throw itemsError;
+          }
+          
+          setCategoryItems(itemsData || []);
+        } catch (itemsError: any) {
+          console.error("Error fetching category items:", itemsError);
+          toast({
+            title: "خطأ في تحميل بنود الفئات",
+            description: itemsError.message || "حدث خطأ أثناء تحميل بنود فئات النقاط",
+            variant: "destructive",
+          });
         }
 
         try {
@@ -149,26 +183,54 @@ export default function PointsManagementPage() {
   const handleSelectChange = (value: string) => {
     if (value === "none") {
       // Handle "none" option (previously an empty string)
-      setFormData(prev => ({ ...prev, categoryId: "" }));
+      setFormData(prev => ({ ...prev, categoryId: "", itemId: "" }));
+      setSelectedCategoryItems([]);
       return;
     }
     
     if (value) {
       const selectedCategory = categories.find(category => category.id.toString() === value);
+      
+      // Filter items for this category
+      const filteredItems = categoryItems.filter(
+        item => item.category_id.toString() === value && item.is_active
+      );
+      setSelectedCategoryItems(filteredItems);
+      
       if (selectedCategory) {
         setFormData(prev => ({ 
           ...prev, 
           categoryId: value,
+          itemId: "",
           points: selectedCategory.default_points,
           isPositive: selectedCategory.is_positive
         }));
       } else {
-        setFormData(prev => ({ ...prev, categoryId: value }));
+        setFormData(prev => ({ ...prev, categoryId: value, itemId: "" }));
       }
     } else {
-      setFormData(prev => ({ ...prev, categoryId: value }));
+      setFormData(prev => ({ ...prev, categoryId: value, itemId: "" }));
+      setSelectedCategoryItems([]);
     }
   }
+
+  const handleItemSelectChange = (value: string) => {
+    setFormData(prev => ({ ...prev, itemId: value }));
+    
+    // If an item is selected, use its points
+    if (value && value !== "none") {
+      const selectedItem = categoryItems.find(item => item.id.toString() === value);
+      if (selectedItem) {
+        setFormData(prev => ({ ...prev, points: selectedItem.points }));
+      }
+    } else if (formData.categoryId && formData.categoryId !== "none") {
+      // If no item is selected but category is, use category default points
+      const selectedCategory = categories.find(category => category.id.toString() === formData.categoryId);
+      if (selectedCategory) {
+        setFormData(prev => ({ ...prev, points: selectedCategory.default_points }));
+      }
+    }
+  };
 
   const handleMultiUserChange = (userIds: string[]) => {
     setSelectedUserIds(userIds)
@@ -227,6 +289,7 @@ export default function PointsManagementPage() {
         points: formData.points,
         isPositive: formData.isPositive,
         categoryId: formData.categoryId,
+        itemId: formData.itemId,
         description: formData.description
       })
 
@@ -235,6 +298,7 @@ export default function PointsManagementPage() {
       formDataObj.append("points", formData.points.toString())
       formDataObj.append("isPositive", formData.isPositive.toString())
       formDataObj.append("categoryId", formData.categoryId)
+      formDataObj.append("itemId", formData.itemId)
       formDataObj.append("description", formData.description)
 
       const result = await batchAddPoints(formDataObj)
@@ -256,9 +320,11 @@ export default function PointsManagementPage() {
         points: 0,
         isPositive: true,
         categoryId: "",
+        itemId: "",
         description: "",
       })
       setSelectedUserIds([])
+      setSelectedCategoryItems([])
 
       // Show additional info if there are missing user codes
       if (result.data?.missingUserCodes && result.data.missingUserCodes.length > 0) {
@@ -378,68 +444,90 @@ export default function PointsManagementPage() {
                     </p>
                   </div>
 
-                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="categoryId" className="text-sm">فئة النقاط</Label>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryId" className="text-sm">فئة النقاط</Label>
                       <Select
                         value={formData.categoryId || "none"}
                         onValueChange={handleSelectChange}
                       >
-                      <SelectTrigger className="text-sm h-9">
-                        <SelectValue placeholder="اختر فئة النقاط" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none" className="text-sm">بدون فئة</SelectItem>
+                        <SelectTrigger className="text-sm h-9">
+                          <SelectValue placeholder="اختر فئة النقاط" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none" className="text-sm">بدون فئة</SelectItem>
                           {categories.map(category => (
-                          <SelectItem key={category.id} value={category.id.toString()} className="text-sm">
+                            <SelectItem key={category.id} value={category.id.toString()} className="text-sm">
                               {category.name} ({category.default_points} نقطة)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="points" className="text-sm">عدد النقاط</Label>
-                    <Input
-                      id="points"
-                      name="points"
-                      type="number"
-                      min="0"
-                      placeholder="أدخل عدد النقاط"
-                      value={formData.points || ""}
-                      onChange={handleChange}
-                      className="text-sm h-9"
-                    />
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 flex-row-reverse">
-                      <Label htmlFor="isPositive" className="text-sm ml-2">إضافة نقاط (تشغيل) / خصم نقاط (إيقاف)</Label>
-                    <Switch
-                      id="isPositive"
-                      checked={formData.isPositive}
-                      onCheckedChange={handleSwitchChange}
-                    />
+                    {formData.categoryId && formData.categoryId !== "none" && selectedCategoryItems.length > 0 && (
+                      <div className="space-y-2">
+                        <Label htmlFor="itemId" className="text-sm">بند النقاط</Label>
+                        <Select
+                          value={formData.itemId || "none"}
+                          onValueChange={handleItemSelectChange}
+                        >
+                          <SelectTrigger className="text-sm h-9">
+                            <SelectValue placeholder="اختر بند النقاط" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none" className="text-sm">بدون بند محدد</SelectItem>
+                            {selectedCategoryItems.map(item => (
+                              <SelectItem key={item.id} value={item.id.toString()} className="text-sm">
+                                {item.name} ({item.points} نقطة)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="points" className="text-sm">عدد النقاط {formData.categoryId && "(اختياري، سيتم استخدام القيمة الافتراضية)"}</Label>
+                      <Input
+                        id="points"
+                        name="points"
+                        type="number"
+                        min="0"
+                        placeholder="أدخل عدد النقاط"
+                        value={formData.points || ""}
+                        onChange={handleChange}
+                        className="text-sm h-9"
+                      />
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {formData.isPositive
-                        ? "سيتم إضافة نقاط إيجابية للمستخدمين المحددين"
-                        : "سيتم خصم نقاط من المستخدمين المحددين"}
-                    </p>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="text-sm">الوصف (اختياري)</Label>
-                    <Textarea
-                      id="description"
-                      name="description"
-                      placeholder="أدخل وصفاً للعملية"
-                      value={formData.description}
-                      onChange={handleChange}
-                      className="text-sm"
-                    />
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2 flex-row-reverse">
+                        <Label htmlFor="isPositive" className="text-sm ml-2">إضافة نقاط (تشغيل) / خصم نقاط (إيقاف)</Label>
+                        <Switch
+                          id="isPositive"
+                          checked={formData.isPositive}
+                          onCheckedChange={handleSwitchChange}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {formData.isPositive
+                          ? "سيتم إضافة نقاط إيجابية للمستخدمين المحددين"
+                          : "سيتم خصم نقاط من المستخدمين المحددين"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description" className="text-sm">الوصف (اختياري)</Label>
+                      <Textarea
+                        id="description"
+                        name="description"
+                        placeholder="أدخل وصفاً للعملية"
+                        value={formData.description}
+                        onChange={handleChange}
+                        className="text-sm"
+                      />
+                    </div>
                   </div>
                 </form>
                 </CardContent>
