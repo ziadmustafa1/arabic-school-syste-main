@@ -7,9 +7,11 @@ import { AppLogo } from "@/components/app-logo"
 import { cn } from "@/lib/utils"
 import { ROLE_NAMES } from "@/lib/constants"
 import { Sidebar } from "@/components/sidebar"
-import { Menu, X } from "lucide-react"
+import { Menu, X, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { BackButton } from "@/components/BackButton"
+import { usePathname } from "next/navigation"
 
 // Fallback data in case of errors
 const FALLBACK_DATA = {
@@ -20,10 +22,10 @@ const FALLBACK_DATA = {
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  userRole: string;
+  userRole?: string;
 }
 
-export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
+export function DashboardLayout({ children, userRole = "3" }: DashboardLayoutProps) {
   // State for loading and data
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -36,6 +38,14 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
   })
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const supabase = createClient()
+  const pathname = usePathname()
+  
+  // Check if current page is a dashboard home page
+  const isDashboardHome = pathname === "/" || 
+                         pathname === "/admin" || 
+                         pathname === "/teacher" || 
+                         pathname === "/student" || 
+                         pathname === "/parent"
   
   // Load data on component mount
   useEffect(() => {
@@ -201,7 +211,10 @@ export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
                   )}
                   <span className="sr-only">Toggle Menu</span>
                 </Button>
-                <AppLogo />
+                <div className="flex items-center gap-3">
+                  <AppLogo />
+                  {!isDashboardHome && <BackButton />}
+                </div>
               </div>
               <div className="flex items-center gap-2 sm:gap-4">
                 <div className="text-xs sm:text-sm">
