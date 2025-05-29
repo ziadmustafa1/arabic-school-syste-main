@@ -17,7 +17,10 @@ const tajawal = Tajawal({
 export const metadata = {
   title: "راصد - نظام راصد التحفيزي",
   description: "نظام راصد التحفيزي لتعزيز تعلم الطلاب وتحفيزهم",
-  generator: 'v0.dev'
+  generator: 'v0.dev',
+  icons: {
+    icon: '/rased-logo.svg',
+  },
 }
 
 export default function RootLayout({

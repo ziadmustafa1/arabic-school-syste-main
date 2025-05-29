@@ -345,9 +345,9 @@ export function MultiUserSelector({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0" align="start">
-          <Command className="w-full">
-            <CommandInput placeholder="ابحث عن مستخدم..." dir="rtl" />
+        <PopoverContent className="w-[350px] p-0" align="start">
+          <Command className="w-[350px]">
+            <CommandInput placeholder="ابحث عن مستخدم..." dir="rtl" className="h-8 my-3 mx-1"/>
             <Tabs 
               defaultValue="all"
               value={activeTab}
@@ -362,14 +362,14 @@ export function MultiUserSelector({
               </TabsList>
             </Tabs>
             <CommandEmpty>لا توجد نتائج.</CommandEmpty>
-            <CommandList>
+            <CommandList className="w-[350px]">
               {loading ? (
                 <div className="flex justify-center items-center py-6">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                 </div>
               ) : (
                 <ScrollArea className="h-[200px]">
-                  <CommandGroup>
+                  <CommandGroup className="w-[350px]">
                     {users.map((user) => (
                       <CommandItem
                         key={user.id}
