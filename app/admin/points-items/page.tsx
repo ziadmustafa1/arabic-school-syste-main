@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Loader2, Plus, PenLine, Trash2, Search, Filter } from "lucide-react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { cn } from "@/lib/utils"
 
 // Define types
 interface PointCategory {
@@ -318,22 +319,24 @@ export default function PointsCategoryItemsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="container mx-auto p-4 md:p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">إدارة بنود النقاط</h1>
-          <p className="text-muted-foreground">إدارة بنود النقاط المستخدمة في النظام</p>
+          <h1 className="text-xl md:text-2xl font-bold">إدارة بنود النقاط</h1>
+          <p className="text-sm text-muted-foreground">إدارة بنود النقاط المستخدمة في النظام</p>
         </div>
-        <Button onClick={() => handleOpenForm()}>
+        <Button onClick={() => handleOpenForm()} className="w-full sm:w-auto">
           <Plus className="ml-2 h-4 w-4" />
           إضافة بند جديد
         </Button>
       </div>
 
       {/* Filtering options */}
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <div>
-          <Label htmlFor="filterType" className="mb-2 block">نوع النقاط</Label>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Points Type Filter */}
+        <div className="space-y-2">
+          <Label htmlFor="filterType">نوع النقاط</Label>
           <Tabs
             defaultValue="all"
             className="w-full"
@@ -341,19 +344,19 @@ export default function PointsCategoryItemsPage() {
           >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="all">الكل</TabsTrigger>
-              <TabsTrigger value="positive" className="text-green-600">
-                إيجابي
-              </TabsTrigger>
-              <TabsTrigger value="negative" className="text-red-600">
-                سلبي
-              </TabsTrigger>
+              <TabsTrigger value="positive" className="text-green-600">إيجابي</TabsTrigger>
+              <TabsTrigger value="negative" className="text-red-600">سلبي</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
         
-        <div>
-          <Label htmlFor="categoryFilter" className="mb-2 block">تصنيف النقاط</Label>
-          <Select value={categoryFilter?.toString() || "all"} onValueChange={(value) => setCategoryFilter(value === "all" ? null : parseInt(value))}>
+        {/* Category Filter */}
+        <div className="space-y-2">
+          <Label htmlFor="categoryFilter">تصنيف النقاط</Label>
+          <Select 
+            value={categoryFilter?.toString() || "all"} 
+            onValueChange={(value) => setCategoryFilter(value === "all" ? null : parseInt(value))}
+          >
             <SelectTrigger id="categoryFilter">
               <SelectValue placeholder="جميع التصنيفات" />
             </SelectTrigger>
@@ -369,35 +372,40 @@ export default function PointsCategoryItemsPage() {
           </Select>
         </div>
         
-        <div>
-          <Label htmlFor="searchQuery" className="mb-2 block">البحث في البنود</Label>
+        {/* Search */}
+        <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+          <Label htmlFor="searchQuery">البحث في البنود</Label>
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
               id="searchQuery"
               placeholder="البحث عن بند..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-8"
+              className="pl-8"
             />
           </div>
         </div>
       </div>
 
+      {/* Table Section */}
       {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
+        <div className="flex h-[400px] items-center justify-center rounded-md border bg-card">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <Card>
-          <CardHeader className="border-b bg-muted/40 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">بنود النقاط ({filteredItems.length})</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {filteredItems.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
+        <div className="rounded-md border bg-card">
+          <div className="border-b bg-muted/40 px-4 py-3">
+            <h2 className="text-lg font-semibold">بنود النقاط ({filteredItems.length})</h2>
+          </div>
+
+          {filteredItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+              <div className="rounded-full bg-muted p-3 mb-4">
+                <Search className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="text-lg font-medium mb-2">لا توجد نتائج</p>
+              <p className="text-sm text-muted-foreground max-w-sm">
                 {searchQuery 
                   ? "لا توجد نتائج مطابقة للبحث" 
                   : filterType !== "all" 
@@ -407,49 +415,54 @@ export default function PointsCategoryItemsPage() {
                     : categoryFilter 
                       ? "لا توجد بنود ضمن هذا التصنيف" 
                       : "لا توجد بنود نقاط مضافة"}
-              </div>
-            ) : (
+              </p>
+            </div>
+          ) : (
+            <div style={{ maxHeight: "600px" }} className="overflow-y-auto">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-muted/50">
-                    <tr className="text-right">
-                      <th className="whitespace-nowrap px-6 py-3 font-medium">اسم البند</th>
-                      <th className="whitespace-nowrap px-6 py-3 font-medium">التصنيف</th>
-                      <th className="whitespace-nowrap px-6 py-3 font-medium">النوع</th>
-                      <th className="whitespace-nowrap px-6 py-3 font-medium">النقاط</th>
-                      <th className="whitespace-nowrap px-6 py-3 font-medium">الحالة</th>
-                      <th className="whitespace-nowrap px-6 py-3 font-medium">الإجراءات</th>
+                    <tr>
+                      <th className="text-right py-3 px-4 text-sm font-medium">اسم البند</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium hidden md:table-cell">التصنيف</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium">النوع</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium">النقاط</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium hidden md:table-cell">الحالة</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium">الإجراءات</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {filteredItems.map((item) => (
                       <tr key={item.id} className="hover:bg-muted/50">
-                        <td className="px-6 py-4 font-medium">{item.name}</td>
-                        <td className="px-6 py-4">{getCategoryName(item.category_id)}</td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                              isCategoryPositive(item.category_id)
-                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                            }`}
-                          >
+                        <td className="p-4 text-sm">
+                          <div className="font-medium">{item.name}</div>
+                          <div className="text-xs text-muted-foreground md:hidden">
+                            {getCategoryName(item.category_id)}
+                          </div>
+                        </td>
+                        <td className="p-4 text-sm hidden md:table-cell">{getCategoryName(item.category_id)}</td>
+                        <td className="p-4 text-sm">
+                          <span className={cn(
+                            "inline-flex rounded-full px-2 py-1 text-xs font-medium",
+                            isCategoryPositive(item.category_id)
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          )}>
                             {isCategoryPositive(item.category_id) ? "إيجابي" : "سلبي"}
                           </span>
                         </td>
-                        <td className="px-6 py-4">{item.points}</td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                              item.is_active
-                                ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                                : "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400"
-                            }`}
-                          >
+                        <td className="p-4 text-sm">{item.points}</td>
+                        <td className="p-4 text-sm hidden md:table-cell">
+                          <span className={cn(
+                            "inline-flex rounded-full px-2 py-1 text-xs font-medium",
+                            item.is_active
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          )}>
                             {item.is_active ? "مفعل" : "غير مفعل"}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="p-4">
                           <div className="flex items-center gap-2">
                             <Button
                               variant="ghost"
@@ -474,9 +487,9 @@ export default function PointsCategoryItemsPage() {
                   </tbody>
                 </table>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Form Dialog for Create/Edit */}
@@ -528,13 +541,14 @@ export default function PointsCategoryItemsPage() {
               />
             </div>
             <div>
-              <Label htmlFor="points" className="mb-1 block">النقاط</Label>
+              <Label htmlFor="points">النقاط</Label>
               <Input
                 id="points"
                 name="points"
                 type="number"
                 min="0"
-                value={formData.points}
+                placeholder="أدخل عدد النقاط"
+                value={formData.points || ""}
                 onChange={handleInputChange}
               />
             </div>
