@@ -53,7 +53,7 @@ export default function PointsCategoriesPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    default_points: 0,
+    default_points: "",
     is_positive: true,
     is_mandatory: true,
     is_restricted: false,
@@ -123,7 +123,7 @@ export default function PointsCategoriesPage() {
       setFormData({
         name: category.name,
         description: category.description || "",
-        default_points: category.default_points,
+        default_points: category.default_points.toString(),
         is_positive: category.is_positive,
         is_mandatory: category.is_mandatory ?? true,
         is_restricted: category.is_restricted ?? false,
@@ -133,7 +133,7 @@ export default function PointsCategoriesPage() {
       setFormData({
         name: "",
         description: "",
-        default_points: 0,
+        default_points: "",
         is_positive: true,
         is_mandatory: true,
         is_restricted: false,
@@ -152,47 +152,42 @@ export default function PointsCategoriesPage() {
     setIsSubmitting(true);
 
     try {
+      if (!formData.name || !formData.default_points) {
+        throw new Error("يرجى ملء جميع الحقول المطلوبة");
+      }
+
       if (!userId) {
         throw new Error("لم يتم تحديد المستخدم الحالي");
       }
 
-      console.log("Client: Submitting form data:", formData);
-
       const categoryData = {
         id: selectedCategory?.id,
-        name: formData.name,
-        description: formData.description,
-        default_points: formData.default_points,
+        name: formData.name.trim(),
+        description: formData.description ? formData.description.trim() : "",
+        default_points: parseInt(formData.default_points.toString()),
         is_positive: formData.is_positive,
         is_mandatory: formData.is_mandatory,
         is_restricted: formData.is_restricted,
         created_by: userId,
       };
 
-      // Use server actions instead of API routes
       const result = selectedCategory
         ? await updateCategory(categoryData)
         : await createCategory(categoryData);
-
-      console.log("Client: Server action result:", result);
 
       if (!result.success) {
         throw new Error(result.error || "حدث خطأ غير معروف");
       }
 
       toast({
-        title: selectedCategory
-          ? "تم تحديث الفئة بنجاح"
-          : "تم إنشاء الفئة بنجاح",
-        description: `تم ${selectedCategory ? "تحديث" : "إنشاء"} فئة النقاط "${
-          formData.name
-        }" بنجاح`,
+        title: selectedCategory ? "تم تحديث الفئة بنجاح" : "تم إنشاء الفئة بنجاح",
+        description: `تم ${selectedCategory ? "تحديث" : "إنشاء"} فئة النقاط "${formData.name}" بنجاح`,
       });
 
       setIsFormDialogOpen(false);
-      fetchCategories(); // Refresh the categories list
+      fetchCategories();
     } catch (error: any) {
-      console.error("Client: Error in form submission:", error);
+      console.error("Error in form submission:", error);
       toast({
         title: "خطأ في حفظ البيانات",
         description: error.message || "حدث خطأ غير معروف أثناء حفظ البيانات",
@@ -208,7 +203,6 @@ export default function PointsCategoriesPage() {
 
     setIsSubmitting(true);
     try {
-      // Use server action for deletion
       const result = await deleteCategory(selectedCategory.id);
 
       if (!result.success) {
@@ -221,11 +215,13 @@ export default function PointsCategoriesPage() {
       });
 
       setIsDeleteDialogOpen(false);
+      setSelectedCategory(null);
       fetchCategories();
     } catch (error: any) {
+      console.error("Error deleting category:", error);
       toast({
         title: "خطأ في حذف البيانات",
-        description: error.message,
+        description: error.message || "حدث خطأ غير معروف أثناء حذف الفئة",
         variant: "destructive",
       });
     } finally {
@@ -354,6 +350,7 @@ export default function PointsCategoriesPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleOpenForm(category)}
+                          className="h-8 w-8"
                         >
                           <Pencil className="h-4 w-4" />
                           <span className="sr-only">تعديل</span>
@@ -362,6 +359,7 @@ export default function PointsCategoriesPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleOpenDelete(category)}
+                          className="h-8 w-8"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                           <span className="sr-only">حذف</span>
@@ -403,17 +401,17 @@ export default function PointsCategoriesPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleOpenForm(category)}
+                            className="h-8 w-8 p-0"
                           >
                             <Pencil className="h-4 w-4" />
-                            <span className="sr-only">تعديل</span>
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleOpenDelete(category)}
+                            className="h-8 w-8 p-0"
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
-                            <span className="sr-only">حذف</span>
                           </Button>
                         </div>
                       </div>
@@ -487,15 +485,17 @@ export default function PointsCategoriesPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleOpenForm(category)}
+                            className="h-8 w-8 p-0"
                           >
-                            <Pencil className="h-3 w-3" />
+                            <Pencil className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleOpenDelete(category)}
+                            className="h-8 w-8 p-0"
                           >
-                            <Trash2 className="h-3 w-3 text-destructive" />
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
                       </div>
@@ -600,59 +600,60 @@ export default function PointsCategoriesPage() {
                   type="number"
                   min="0"
                   required
-                  value={formData.default_points}
+                  placeholder="أدخل عدد النقاط الافتراضية"
+                  value={formData.default_points || ""}
                   onChange={handleChange}
+                  className="text-start ltr"
                 />
               </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Switch
-                  id="is_positive"
-                  checked={formData.is_positive}
-                  onCheckedChange={(checked) =>
-                    handleSwitchChange("is_positive", checked)
-                  }
-                />
-                <Label htmlFor="is_positive">
-                  {formData.is_positive
-                    ? "إيجابي (إضافة نقاط)"
-                    : "سلبي (خصم نقاط)"}
-                </Label>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between space-x-4 space-x-reverse">
+                  <Label htmlFor="is_positive" className="flex flex-col space-y-1">
+                    <span>نوع النقاط</span>
+                    <span className="font-normal text-sm text-muted-foreground">
+                      {formData.is_positive ? "إضافة نقاط (إيجابي)" : "خصم نقاط (سلبي)"}
+                    </span>
+                  </Label>
+                  <Switch
+                    id="is_positive"
+                    checked={formData.is_positive}
+                    onCheckedChange={(checked) => handleSwitchChange("is_positive", checked)}
+                  />
+                </div>
+
+                {/* Only show mandatory/restricted options for negative categories */}
+                {!formData.is_positive && (
+                  <>
+                    <div className="flex items-center justify-between space-x-4 space-x-reverse">
+                      <Label htmlFor="is_mandatory" className="flex flex-col space-y-1">
+                        <span>إلزامية الدفع</span>
+                        <span className="font-normal text-sm text-muted-foreground">
+                          {formData.is_mandatory ? "إجباري (تخصم تلقائياً)" : "اختياري (يمكن الدفع في أي وقت)"}
+                        </span>
+                      </Label>
+                      <Switch
+                        id="is_mandatory"
+                        checked={formData.is_mandatory}
+                        onCheckedChange={(checked) => handleSwitchChange("is_mandatory", checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between space-x-4 space-x-reverse">
+                      <Label htmlFor="is_restricted" className="flex flex-col space-y-1">
+                        <span>تقييد الدفع</span>
+                        <span className="font-normal text-sm text-muted-foreground">
+                          {formData.is_restricted ? "مقيد (يحتاج موافقة الإداري)" : "غير مقيد (يمكن الدفع مباشرة)"}
+                        </span>
+                      </Label>
+                      <Switch
+                        id="is_restricted"
+                        checked={formData.is_restricted}
+                        onCheckedChange={(checked) => handleSwitchChange("is_restricted", checked)}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
-
-              {/* Only show mandatory/restricted options for negative categories */}
-              {!formData.is_positive && (
-                <>
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <Switch
-                      id="is_mandatory"
-                      checked={formData.is_mandatory}
-                      onCheckedChange={(checked) =>
-                        handleSwitchChange("is_mandatory", checked)
-                      }
-                    />
-                    <Label htmlFor="is_mandatory">
-                      {formData.is_mandatory
-                        ? "إجباري (تخصم تلقائياً)"
-                        : "اختياري (يمكن الدفع في أي وقت)"}
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <Switch
-                      id="is_restricted"
-                      checked={formData.is_restricted}
-                      onCheckedChange={(checked) =>
-                        handleSwitchChange("is_restricted", checked)
-                      }
-                    />
-                    <Label htmlFor="is_restricted">
-                      {formData.is_restricted
-                        ? "مقيد (يحتاج موافقة الإداري للدفع)"
-                        : "غير مقيد (يمكن الدفع مباشرة)"}
-                    </Label>
-                  </div>
-                </>
-              )}
             </div>
             <DialogFooter>
               <Button

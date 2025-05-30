@@ -19,6 +19,28 @@ import { Loader2, Plus, TrendingUp, TrendingDown, Users, Award } from "lucide-re
 import { MultiUserSelector } from "@/components/ui/multi-user-selector"
 import { getCurrentUser } from "@/lib/utils/auth-compat"
 
+// Add type definitions for the database response
+type DbRestrictedPoint = {
+  id: number
+  user_id: string
+  category_id: number
+  points: number
+  created_at: string
+  is_resolved: boolean
+  created_by: string
+  users: {
+    full_name: string
+    user_code: string
+  }
+  point_categories: {
+    name: string
+  }
+  point_category_items?: {
+    id: number
+    name: string
+  }[]
+}
+
 type RestrictedPoint = {
   id: number
   user_id: string
@@ -30,6 +52,10 @@ type RestrictedPoint = {
   user_full_name: string
   user_code: string
   category_name: string
+  point_category_items?: {
+    id: number
+    name: string
+  }[]
 }
 
 // Define a type for category data
@@ -79,19 +105,21 @@ export default function PointsManagementPage() {
       try {
         setIsLoading(true);
         
-        // Fetch point categories using server action
-        const categoriesResult = await getCategories();
-        
-        if (!categoriesResult.success) {
-          console.error("Error fetching categories:", categoriesResult.error);
+        // Fetch categories directly from Supabase
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from("point_categories")
+          .select("*")
+          .order("name");
+
+        if (categoriesError) {
+          console.error("Error fetching categories:", categoriesError);
           toast({
             title: "خطأ في تحميل الفئات",
-            description: categoriesResult.error || "حدث خطأ أثناء تحميل فئات النقاط",
+            description: "حدث خطأ أثناء تحميل فئات النقاط",
             variant: "destructive",
           });
         } else {
-          // Set categories and ensure they match the Category type
-          setCategories(categoriesResult.data as Category[] || []);
+          setCategories(categoriesData || []);
         }
 
         // Fetch category items
@@ -177,12 +205,18 @@ export default function PointsManagementPage() {
   }
 
   const handleSwitchChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, isPositive: checked }))
+    setFormData((prev) => ({ 
+      ...prev, 
+      isPositive: checked,
+      categoryId: "", // Reset category when switching type
+      itemId: "", // Reset item when switching type
+      points: 0 // Reset points when switching type
+    }))
+    setSelectedCategoryItems([]) // Reset selected items
   }
 
   const handleSelectChange = (value: string) => {
     if (value === "none") {
-      // Handle "none" option (previously an empty string)
       setFormData(prev => ({ ...prev, categoryId: "", itemId: "" }));
       setSelectedCategoryItems([]);
       return;
@@ -193,7 +227,7 @@ export default function PointsManagementPage() {
       
       // Filter items for this category
       const filteredItems = categoryItems.filter(
-        item => item.category_id.toString() === value && item.is_active
+        item => item.category_id.toString() === value
       );
       setSelectedCategoryItems(filteredItems);
       
@@ -366,60 +400,60 @@ export default function PointsManagementPage() {
 
   return (
     <div className="container mx-auto p-2 sm:p-4">
-        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">إدارة النقاط</h1>
+        <h1 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-6">إدارة النقاط</h1>
 
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mb-4 sm:mb-6">
+        <div className="grid gap-2 sm:gap-4 grid-cols-2 sm:grid-cols-4 mb-3 sm:mb-6">
           <Card>
-            <CardHeader className="pb-2 px-3 pt-3">
-              <CardTitle className="text-sm font-medium">إجمالي المستخدمين</CardTitle>
+            <CardHeader className="pb-2 px-2 sm:px-3 pt-2 sm:pt-3">
+              <CardTitle className="text-xs sm:text-sm font-medium">إجمالي المستخدمين</CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent className="px-2 sm:px-3 pb-2 sm:pb-3">
               <div className="flex items-center justify-between">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                <p className="text-xl sm:text-2xl font-bold">{stats.totalUsers}</p>
+                <Users className="h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground" />
+                <p className="text-lg sm:text-2xl font-bold">{stats.totalUsers}</p>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="pb-2 px-3 pt-3">
-              <CardTitle className="text-sm font-medium">إجمالي النقاط</CardTitle>
+            <CardHeader className="pb-2 px-2 sm:px-3 pt-2 sm:pt-3">
+              <CardTitle className="text-xs sm:text-sm font-medium">إجمالي النقاط</CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent className="px-2 sm:px-3 pb-2 sm:pb-3">
               <div className="flex items-center justify-between">
-                <Award className="h-5 w-5 text-muted-foreground" />
-                <p className="text-xl sm:text-2xl font-bold">{stats.totalPoints}</p>
+                <Award className="h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground" />
+                <p className="text-lg sm:text-2xl font-bold">{stats.totalPoints}</p>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="pb-2 px-3 pt-3">
-              <CardTitle className="text-sm font-medium">النقاط الإيجابية</CardTitle>
+            <CardHeader className="pb-2 px-2 sm:px-3 pt-2 sm:pt-3">
+              <CardTitle className="text-xs sm:text-sm font-medium">النقاط الإيجابية</CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent className="px-2 sm:px-3 pb-2 sm:pb-3">
               <div className="flex items-center justify-between">
-                <TrendingUp className="h-5 w-5 text-green-500" />
-                <p className="text-xl sm:text-2xl font-bold text-green-500">{stats.positivePoints}</p>
+                <TrendingUp className="h-4 sm:h-5 w-4 sm:w-5 text-green-500" />
+                <p className="text-lg sm:text-2xl font-bold text-green-500">{stats.positivePoints}</p>
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="pb-2 px-3 pt-3">
-              <CardTitle className="text-sm font-medium">النقاط السلبية</CardTitle>
+            <CardHeader className="pb-2 px-2 sm:px-3 pt-2 sm:pt-3">
+              <CardTitle className="text-xs sm:text-sm font-medium">النقاط السلبية</CardTitle>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent className="px-2 sm:px-3 pb-2 sm:pb-3">
               <div className="flex items-center justify-between">
-                <TrendingDown className="h-5 w-5 text-red-500" />
-                <p className="text-xl sm:text-2xl font-bold text-red-500">{stats.negativePoints}</p>
+                <TrendingDown className="h-4 sm:h-5 w-4 sm:w-5 text-red-500" />
+                <p className="text-lg sm:text-2xl font-bold text-red-500">{stats.negativePoints}</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="add" className="mb-4 sm:mb-6">
-          <TabsList className="mb-4 w-full flex flex-wrap">
+        <Tabs defaultValue="add" className="mb-3 sm:mb-6">
+          <TabsList className="mb-3 sm:mb-4 w-full flex flex-wrap">
             <TabsTrigger value="add" className="flex-1 text-xs sm:text-sm">إضافة نقاط</TabsTrigger>
             <TabsTrigger value="restrictions" className="flex-1 text-xs sm:text-sm">النقاط المقيدة</TabsTrigger>
             <TabsTrigger value="history" className="flex-1 text-xs sm:text-sm">سجل النقاط</TabsTrigger>
@@ -427,65 +461,87 @@ export default function PointsManagementPage() {
 
           <TabsContent value="add">
             <Card>
-                <CardHeader className="px-3 sm:px-6 pt-3 sm:pt-4 pb-2">
-                <CardTitle className="text-base sm:text-lg">إضافة/خصم نقاط متعددة</CardTitle>
+              <CardHeader className="px-3 sm:px-6 pt-3 sm:pt-4 pb-2">
+                <CardTitle className="text-sm sm:text-lg">إضافة/خصم نقاط متعددة</CardTitle>
                 <CardDescription className="text-xs sm:text-sm">أضف أو اخصم نقاط لعدة مستخدمين دفعة واحدة</CardDescription>
-                </CardHeader>
+              </CardHeader>
               <CardContent className="px-3 sm:px-6 py-2 sm:py-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="user-selector" className="text-sm">اختيار المستخدمين</Label>
                     <MultiUserSelector 
                       values={selectedUserIds}
                       onChange={handleMultiUserChange}
                     />
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       اختر المستخدمين لإضافة نقاط للطلاب أو المعلمين أو أولياء الأمور.
                     </p>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="categoryId" className="text-sm">فئة النقاط</Label>
+                      <Label htmlFor="categoryType" className="text-sm">فئة النقاط</Label>
                       <Select
-                        value={formData.categoryId || "none"}
-                        onValueChange={handleSelectChange}
+                        value={formData.isPositive ? "positive" : "negative"}
+                        onValueChange={(value) => handleSwitchChange(value === "positive")}
                       >
-                        <SelectTrigger className="text-sm h-9">
+                        <SelectTrigger className="text-sm h-8 sm:h-9">
                           <SelectValue placeholder="اختر فئة النقاط" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none" className="text-sm">بدون فئة</SelectItem>
-                          {categories.map(category => (
-                            <SelectItem key={category.id} value={category.id.toString()} className="text-sm">
-                              {category.name} ({category.default_points} نقطة)
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="positive" className="text-sm text-green-600">دعم إيجابي</SelectItem>
+                          <SelectItem value="negative" className="text-sm text-red-600">حسم سلبي</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    {formData.categoryId && formData.categoryId !== "none" && selectedCategoryItems.length > 0 && (
-                      <div className="space-y-2">
-                        <Label htmlFor="itemId" className="text-sm">بند النقاط</Label>
-                        <Select
-                          value={formData.itemId || "none"}
-                          onValueChange={handleItemSelectChange}
-                        >
-                          <SelectTrigger className="text-sm h-9">
-                            <SelectValue placeholder="اختر بند النقاط" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none" className="text-sm">بدون بند محدد</SelectItem>
-                            {selectedCategoryItems.map(item => (
-                              <SelectItem key={item.id} value={item.id.toString()} className="text-sm">
-                                {item.name} ({item.points} نقطة)
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryId" className="text-sm">تصنيف النقاط</Label>
+                      <Select
+                        value={formData.categoryId || "none"}
+                        onValueChange={handleSelectChange}
+                      >
+                        <SelectTrigger className="text-sm h-8 sm:h-9">
+                          <SelectValue placeholder="اختر تصنيف النقاط" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none" className="text-sm">اختر التصنيف</SelectItem>
+                          {categories
+                            .filter(category => category.is_positive === formData.isPositive)
+                            .map(category => (
+                              <SelectItem key={category.id} value={category.id.toString()} className="text-sm">
+                                {category.name}
                               </SelectItem>
                             ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="itemId" className="text-sm">بند النقاط</Label>
+                      <Select
+                        value={formData.itemId || "none"}
+                        onValueChange={handleItemSelectChange}
+                        disabled={!formData.categoryId || formData.categoryId === "none"}
+                      >
+                        <SelectTrigger className="text-sm h-8 sm:h-9">
+                          <SelectValue placeholder="اختر بند النقاط" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none" className="text-sm">اختر البند</SelectItem>
+                          {selectedCategoryItems.map(item => (
+                            <SelectItem key={item.id} value={item.id.toString()} className="text-sm">
+                              {item.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {formData.categoryId && formData.categoryId !== "none" && selectedCategoryItems.length === 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          لا توجد بنود مضافة لهذا التصنيف
+                        </p>
+                      )}
+                    </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="points" className="text-sm">عدد النقاط {formData.categoryId && "(اختياري، سيتم استخدام القيمة الافتراضية)"}</Label>
@@ -497,7 +553,7 @@ export default function PointsManagementPage() {
                         placeholder="أدخل عدد النقاط"
                         value={formData.points || ""}
                         onChange={handleChange}
-                        className="text-sm h-9"
+                        className="text-sm h-8 sm:h-9"
                       />
                     </div>
 
@@ -525,28 +581,28 @@ export default function PointsManagementPage() {
                         placeholder="أدخل وصفاً للعملية"
                         value={formData.description}
                         onChange={handleChange}
-                        className="text-sm"
+                        className="text-sm min-h-[60px]"
                       />
                     </div>
                   </div>
                 </form>
-                </CardContent>
+              </CardContent>
               <CardFooter className="flex justify-center sm:justify-end px-3 sm:px-6 pb-3 pt-0">
                 <Button 
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto text-sm"
+                  className="w-full sm:w-auto text-sm h-8 sm:h-9"
                 >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="ml-2 h-3 w-3 animate-spin" />
                       جاري المعالجة...
-                      </>
-                    ) : (
+                    </>
+                  ) : (
                     <>تنفيذ العملية</>
-                    )}
-                  </Button>
-                </CardFooter>
+                  )}
+                </Button>
+              </CardFooter>
             </Card>
           </TabsContent>
 
@@ -581,8 +637,7 @@ function PointsHistoryView() {
     try {
       let query = supabase
         .from("points_transactions")
-        .select(
-          `
+        .select(`
           id,
           points,
           is_positive,
@@ -590,9 +645,9 @@ function PointsHistoryView() {
           created_at,
           users!points_transactions_user_id_fkey(id, full_name, user_code),
           creator:users!points_transactions_created_by_fkey(full_name),
-          point_categories(id, name)
-        `,
-        )
+          point_categories(id, name),
+          item:point_category_items!points_transactions_item_id_fkey(id, name)
+        `)
         .order("created_at", { ascending: false })
         .limit(100)
 
@@ -738,16 +793,17 @@ function PointsHistoryView() {
                   <tr>
                     <th className="p-2 sm:p-3 text-center">المستخدم</th>
                     <th className="p-2 sm:p-3 text-center">النقاط</th>
-                    <th className="p-2 sm:p-3 text-center hidden md:table-cell">الوصف</th>
-                    <th className="p-2 sm:p-3 text-center hidden md:table-cell">الفئة</th>
-                    <th className="p-2 sm:p-3 text-center hidden sm:table-cell">بواسطة</th>
+                    <th className="p-2 sm:p-3 text-center">الوصف</th>
+                    <th className="p-2 sm:p-3 text-center">الفئة</th>
+                    <th className="p-2 sm:p-3 text-center">البند</th>
+                    <th className="p-2 sm:p-3 text-center">بواسطة</th>
                     <th className="p-2 sm:p-3 text-center">التاريخ</th>
                   </tr>
                 </thead>
                 <tbody>
                   {transactions.map((transaction) => (
                     <tr key={transaction.id} className="border-t">
-                      <td className="p-2 sm:p-3 text-center">
+                      <td className="p-2 sm:p-3">
                         <div className="font-medium text-sm">{transaction.users?.full_name}</div>
                         <div className="text-xs text-muted-foreground">{transaction.users?.user_code}</div>
                       </td>
@@ -763,9 +819,10 @@ function PointsHistoryView() {
                           {transaction.points}
                         </span>
                       </td>
-                      <td className="p-2 sm:p-3 text-center hidden md:table-cell">{transaction.description}</td>
-                      <td className="p-2 sm:p-3 text-center hidden md:table-cell">{transaction.point_categories?.name || "-"}</td>
-                      <td className="p-2 sm:p-3 text-center hidden sm:table-cell">{transaction.creator?.full_name || "-"}</td>
+                      <td className="p-2 sm:p-3">{transaction.description || "-"}</td>
+                      <td className="p-2 sm:p-3 text-start">{transaction.point_categories?.name || "-"}</td>
+                      <td className="p-2 sm:p-3 text-center">{transaction.item?.name || "-"}</td>
+                      <td className="p-2 sm:p-3">{transaction.creator?.full_name || "-"}</td>
                       <td className="p-2 sm:p-3 text-center whitespace-nowrap text-xs sm:text-sm">{formatDate(transaction.created_at)}</td>
                     </tr>
                   ))}
@@ -804,7 +861,8 @@ function RestrictionsManagementView() {
           is_resolved,
           created_by,
           users:user_id(full_name, user_code),
-          point_categories:category_id(name)
+          point_categories:category_id(name),
+          point_category_items(id, name)
         `)
         .eq("is_resolved", false)
         .order("created_at", { ascending: false })
@@ -812,7 +870,7 @@ function RestrictionsManagementView() {
       if (error) throw error
 
       // Transform the data for easier rendering
-      const formattedData = data?.map(item => ({
+      const formattedData: RestrictedPoint[] = (data || []).map((item: any) => ({
         id: item.id,
         user_id: item.user_id,
         category_id: item.category_id,
@@ -822,8 +880,9 @@ function RestrictionsManagementView() {
         created_by: item.created_by,
         user_full_name: item.users?.full_name || "غير معروف",
         user_code: item.users?.user_code || "غير معروف",
-        category_name: item.point_categories?.name || "غير معروف"
-      })) || []
+        category_name: item.point_categories?.name || "غير معروف",
+        point_category_items: item.point_category_items || []
+      }))
 
       setRestrictions(formattedData)
     } catch (error) {
@@ -868,7 +927,7 @@ function RestrictionsManagementView() {
         await supabase.from("notifications").insert({
           user_id: restrictionData.user_id,
           title: "تم رفع القيد",
-          content: `تم رفع القيد عن ${restrictionData.points} نقطة من فئة "${restrictionData.point_categories?.name || ''}" ويمكنك الآن دفع هذه النقاط.`
+          content: `تم رفع القيد عن ${restrictionData.points} نقطة من فئة "${(restrictionData as any).point_categories?.name || ''}" ويمكنك الآن دفع هذه النقاط.`
         })
       }
       
@@ -931,6 +990,7 @@ function RestrictionsManagementView() {
                   <tr>
                     <th className="p-2 sm:p-3 text-center">الطالب</th>
                     <th className="p-2 sm:p-3 text-center">فئة النقاط</th>
+                    <th className="p-2 sm:p-3 text-center">البند</th>
                     <th className="p-2 sm:p-3 text-center">النقاط</th>
                     <th className="p-2 sm:p-3 text-center hidden sm:table-cell">تاريخ القيد</th>
                     <th className="p-2 sm:p-3 text-center">الإجراءات</th>
@@ -939,11 +999,12 @@ function RestrictionsManagementView() {
                 <tbody>
                   {restrictions.map((restriction) => (
                     <tr key={restriction.id} className="border-t">
-                      <td className="p-2 sm:p-3 text-center">
+                      <td className="p-2 sm:p-3 text-start">
                         <div className="font-medium text-sm">{restriction.user_full_name}</div>
                         <div className="text-xs text-muted-foreground">{restriction.user_code}</div>
                       </td>
                       <td className="p-2 sm:p-3 text-sm text-center">{restriction.category_name}</td>
+                      <td className="p-2 sm:p-3 text-sm text-center">{restriction.point_category_items?.[0]?.name || "-"}</td>
                       <td className="p-2 sm:p-3 text-destructive font-medium text-center">{restriction.points}</td>
                       <td className="p-2 sm:p-3 text-xs sm:text-sm text-center hidden sm:table-cell">{formatDate(restriction.created_at)}</td>
                       <td className="p-2 sm:p-3 text-center">
