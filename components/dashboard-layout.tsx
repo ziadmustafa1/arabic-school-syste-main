@@ -173,90 +173,84 @@ export function DashboardLayout({ children, userRole = "3" }: DashboardLayoutPro
   
   return (
     <TooltipProvider>
-      <div className="relative flex min-h-screen flex-row-reverse">
-        {/* Sidebar */}
-        <aside
-          className={cn(
-            "fixed inset-y-0 right-0 z-50 w-64 lg:w-72 bg-background transition-transform duration-300 ease-in-out",
-            !sidebarOpen && "translate-x-full lg:translate-x-0"
-          )}
-        >
-          <Sidebar onClose={() => setSidebarOpen(false)} />
-        </aside>
-
-        {/* Main Content */}
-        <main className={cn(
-          "flex-1 flex flex-col min-h-screen",
-          "lg:mr-72", // Fixed margin for sidebar on desktop
+      <div className="min-h-screen max-h-[100dvh] bg-background flex rtl">
+        {/* Sidebar - absolute on mobile and fixed on desktop */}
+        <div className={cn(
+          "fixed inset-y-0 right-0 z-50 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:relative lg:z-20",
+          "w-[260px] lg:w-[280px]",
+          sidebarOpen ? "translate-x-0" : "translate-x-full"
         )}>
-          {/* Header */}
-          <header className="sticky top-0 z-40 border-b bg-background">
-            <div className="container flex h-16 items-center px-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden mr-2"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-              >
-                {sidebarOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
-                <span className="sr-only">Toggle Menu</span>
-              </Button>
-
-              <div className="flex items-center gap-3 flex-1">
-                <AppLogo />
-                {!isDashboardHome && <BackButton />}
-                {!isDashboardHome && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HomeButton
-                        href={
-                          userData.role === 1
-                            ? "/student"
-                            : userData.role === 2
-                            ? "/parent"
-                            : userData.role === 3
-                            ? "/teacher"
-                            : "/admin"
-                        }
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      <p className="text-xs">العودة إلى الصفحة الرئيسية</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-
+          <Sidebar onClose={() => setSidebarOpen(false)} />
+        </div>
+        
+        {/* Overlay to close sidebar on mobile */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        
+        {/* Main content - with margin only on desktop */}
+        <div className={cn(
+          "flex-1 flex flex-col min-h-screen max-h-[100dvh] overflow-hidden",
+          "transition-all duration-200 ease-in-out",
+          sidebarOpen ? "lg:mr-[280px]" : ""
+        )}>
+          <header className="sticky top-0 z-30 border-b bg-card p-2 sm:p-4">
+            <div className="container mx-auto flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="text-sm">
-                  <span className="font-semibold">{userData.name}</span>
-                  <span className="text-muted-foreground hidden sm:inline mr-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="lg:hidden h-11 w-11 min-h-[44px] min-w-[44px]"
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                >
+                  {sidebarOpen ? (
+                    <X className="h-6 w-6" />
+                  ) : (
+                    <Menu className="h-6 w-6" />
+                  )}
+                  <span className="sr-only">Toggle Menu</span>
+                </Button>
+                <div className="flex items-center gap-3">
+                  <AppLogo />
+                  {!isDashboardHome && <BackButton />}
+                  {!isDashboardHome && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HomeButton 
+                          href={
+                            userData.role === 1 ? "/student" : 
+                            userData.role === 2 ? "/parent" : 
+                            userData.role === 3 ? "/teacher" : 
+                            "/admin"
+                          } 
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p className="text-xs">العودة إلى الصفحة الرئيسية</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className="text-xs sm:text-sm">
+                  <span className="font-semibold pl-3">{userData.name}</span>
+                  <span className="ml-2 text-muted-foreground hidden sm:inline">
                     {ROLE_NAMES[userData.role]}
                   </span>
                 </div>
               </div>
             </div>
           </header>
-
-          {/* Page Content */}
-          <div className="flex-1">
-            <div className="container py-6">
+          <main className="flex-1 overflow-y-auto">
+            <div className="container mx-auto p-2 sm:p-4 pb-16 sm:pb-4">
               {children}
             </div>
-          </div>
-        </main>
-
-        {/* Mobile Overlay */}
-        {sidebarOpen && (
-          <div 
-            className="fixed inset-0 z-40 bg-black/80 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+          </main>
+        </div>
       </div>
     </TooltipProvider>
   )
