@@ -309,200 +309,149 @@ export function Sidebar({ onClose }: SidebarProps) {
   })
 
   return (
-    <aside className={cn(
-      "w-[260px] lg:w-[280px] h-screen max-h-[100dvh] overflow-hidden bg-card border-l flex flex-col",
-      isCollapsed && "w-16 lg:w-20" // Reduce width when collapsed
-    )}>
-      {/* User profile and collapse button */}
-      <div className="p-3 sm:p-4 flex items-center justify-between border-b">
-        {!isCollapsed ? (
-          <>
-            <div className="flex items-center space-x-3 flex-row-reverse">
-              <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
-                <AvatarFallback>{userInitials}</AvatarFallback>
-              </Avatar>
-              <div className="space-y-1 text-right">
-                <p className="text-sm font-medium leading-none">{userName}</p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {ROLE_NAMES[userRole || 1]}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2 flex-row-reverse">
-              {onClose && (
-                <Button variant="ghost" size="icon" onClick={onClose} className="lg:hidden">
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsCollapsed(true)}
-                className="hidden lg:flex"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-col items-center w-full">
+    <aside className="flex h-full flex-col border-l bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-10 border-b bg-background">
+        <div className="flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
               <AvatarFallback>{userInitials}</AvatarFallback>
             </Avatar>
+            {!isCollapsed && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">{userName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {ROLE_NAMES[userRole || 1]}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center">
+            {onClose && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onClose} 
+                className="lg:hidden"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsCollapsed(false)}
-              className="mt-2"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="hidden lg:flex"
             >
-              <ChevronLeft className="h-4 w-4" />
-          </Button>
+              {isCollapsed ? (
+                <ChevronLeft className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </Button>
           </div>
-        )}
         </div>
 
-      {/* Search bar */}
+        {/* Search bar - only show when not collapsed */}
         {!isCollapsed && (
-        <div className="p-3 sm:p-4">
+          <div className="border-t px-4 py-3">
             <div className="relative">
-            <Search className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                type="search"
                 placeholder="بحث..."
-              className="pl-2 pr-8 h-9 text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8"
               />
             </div>
           </div>
         )}
+      </div>
 
-        <Separator />
-
-      <div className="flex-1 overflow-auto p-2 sm:p-4">
-        <nav className="grid gap-1 sm:gap-2">
-          <TooltipProvider>
-            {filteredNavItems.map((item) => (
-              <Tooltip key={item.href} delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex items-center justify-between rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm transition-all hover:bg-accent",
-                      pathname === item.href ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-                      isCollapsed && "justify-center px-1 sm:px-2",
-                    )}
-                  >
-                    <div className={cn("flex items-center gap-2 sm:gap-3", isCollapsed && "justify-center")}>
-                      <item.icon className={cn(
-                        "h-4 w-4 sm:h-5 sm:w-5",
-                      )} />
-                      {!isCollapsed && <span className="line-clamp-1">{item.title}</span>}
-                    </div>
-                    {!isCollapsed && item.badge && (
-                      <Badge variant="destructive" className="ml-auto text-xs">
-                        {item.badge}
-                      </Badge>
-                    )}
-                    {isCollapsed && item.badge && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -right-1 -top-1 flex h-4 min-w-4 sm:h-5 sm:min-w-5 items-center justify-center rounded-full p-0 text-[10px] sm:text-xs"
-                      >
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </Link>
-                </TooltipTrigger>
-                {isCollapsed && <TooltipContent side="left">{item.title}</TooltipContent>}
-              </Tooltip>
-            ))}
-          </TooltipProvider>
-          </nav>
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto p-2">
+        <div className="space-y-1">
+          {filteredNavItems.map((item) => (
+            <Tooltip key={item.href} delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center justify-between rounded-md px-2 py-2 text-sm transition-colors",
+                    pathname === item.href 
+                      ? "bg-primary text-primary-foreground" 
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    isCollapsed && "justify-center px-0"
+                  )}
+                >
+                  <div className={cn("flex items-center gap-3", isCollapsed && "justify-center")}>
+                    <item.icon className="h-4 w-4" />
+                    {!isCollapsed && <span>{item.title}</span>}
+                  </div>
+                  {!isCollapsed && item.badge && (
+                    <Badge variant="destructive" className="ml-auto">
+                      {item.badge}
+                    </Badge>
+                  )}
+                  {isCollapsed && item.badge && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -right-1 -top-1 min-h-4 min-w-4 rounded-full p-0 text-xs"
+                    >
+                      {item.badge}
+                    </Badge>
+                  )}
+                </Link>
+              </TooltipTrigger>
+              {isCollapsed && <TooltipContent side="left">{item.title}</TooltipContent>}
+            </Tooltip>
+          ))}
         </div>
+      </nav>
 
-        <Separator />
-
-      <div className={cn("p-3 sm:p-4", isCollapsed && "flex flex-col items-center")}>
-          {!isCollapsed ? (
-          <div className="mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
-              <Avatar>
-                <AvatarFallback>{userInitials}</AvatarFallback>
-              </Avatar>
-              <div>
-              <p className="text-xs sm:text-sm font-medium">{userName}</p>
-                <p className="text-xs text-muted-foreground">
-                  {userRole ? ROLE_NAMES[userRole] : ""}
-                </p>
-              </div>
-            </div>
-          ) : (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Avatar className="mb-3 sm:mb-4 cursor-pointer">
-                  <AvatarFallback>{userInitials}</AvatarFallback>
-                </Avatar>
-              </TooltipTrigger>
-              <TooltipContent side="left">{userName}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          )}
-
-        <nav className="grid gap-1 sm:gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/profile"
-                  className={cn(
-                    "flex items-center gap-2 sm:gap-3 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm transition-all hover:bg-accent",
-                    pathname === "/profile" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-                    isCollapsed && "justify-center px-1 sm:px-2",
-                  )}
-                >
-                  <User className="h-4 w-4 sm:h-5 sm:w-5" />
-                  {!isCollapsed && <span>الملف الشخصي</span>}
-                </Link>
-              </TooltipTrigger>
-              {isCollapsed && <TooltipContent side="left">الملف الشخصي</TooltipContent>}
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/settings"
-                  className={cn(
-                    "flex items-center gap-2 sm:gap-3 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm transition-all hover:bg-accent",
-                    pathname === "/settings" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-                    isCollapsed && "justify-center px-1 sm:px-2",
-                  )}
-                >
-                  <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
-                  {!isCollapsed && <span>الإعدادات</span>}
-                </Link>
-              </TooltipTrigger>
-              {isCollapsed && <TooltipContent side="left">الإعدادات</TooltipContent>}
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/api/auth/logout"
-                  prefetch={false}
-                  className={cn(
-                    "flex items-center gap-2 sm:gap-3 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-red-500 transition-all hover:bg-red-100",
-                    isCollapsed && "justify-center px-1 sm:px-2",
-                  )}
-                >
-                  <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
-                  {!isCollapsed && <span>تسجيل الخروج</span>}
-                </Link>
-              </TooltipTrigger>
-              {isCollapsed && <TooltipContent side="left">تسجيل الخروج</TooltipContent>}
-            </Tooltip>
-          </TooltipProvider>
-          </nav>
+      {/* Footer */}
+      <div className="sticky bottom-0 border-t bg-background p-4">
+        <div className="flex flex-col space-y-2">
+          <Link
+            href="/profile"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-2 py-2 text-sm transition-colors",
+              pathname === "/profile" 
+                ? "bg-primary text-primary-foreground" 
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+              isCollapsed && "justify-center"
+            )}
+          >
+            <User className="h-4 w-4" />
+            {!isCollapsed && <span>الملف الشخصي</span>}
+          </Link>
+          <Link
+            href="/settings"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-2 py-2 text-sm transition-colors",
+              pathname === "/settings" 
+                ? "bg-primary text-primary-foreground" 
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+              isCollapsed && "justify-center"
+            )}
+          >
+            <Settings className="h-4 w-4" />
+            {!isCollapsed && <span>الإعدادات</span>}
+          </Link>
+          <Link
+            href="/api/auth/logout"
+            prefetch={false}
+            className={cn(
+              "flex items-center gap-3 rounded-md px-2 py-2 text-sm text-red-500 transition-colors hover:bg-red-100",
+              isCollapsed && "justify-center"
+            )}
+          >
+            <LogOut className="h-4 w-4" />
+            {!isCollapsed && <span>تسجيل الخروج</span>}
+          </Link>
+        </div>
       </div>
     </aside>
   )
