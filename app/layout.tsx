@@ -8,6 +8,7 @@ import { ErrorBoundary } from "@/components/error-boundary"
 import { FocusResetter } from "@/components/focus-resetter"
 import { ResetTheme } from "@/app/reset-theme"
 import { StorageSetup } from "@/app/components/storage-setup"
+import { Toaster as ReactHotToastToaster } from 'react-hot-toast'
 
 const tajawal = Tajawal({
   subsets: ["arabic"],
@@ -50,6 +51,17 @@ export default function RootLayout({
             {children}
           </ErrorBoundary>
           <Toaster />
+          <ReactHotToastToaster
+            position="top-center"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: 'white',
+                color: 'black',
+                border: '1px solid var(--border)',
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

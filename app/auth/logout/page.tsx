@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { logout } from "@/lib/actions/auth"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import toast from "react-hot-toast"
 
 export default function LogoutPage() {
   const router = useRouter()
@@ -26,6 +27,10 @@ export default function LogoutPage() {
     handleLogout()
   }, [router])
   
+  useEffect(() => {
+    toast.success("تم تسجيل الخروج بنجاح")
+  }, [])
+
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-muted/10">
       <div className="flex flex-col items-center justify-center space-y-4">

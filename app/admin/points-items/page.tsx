@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+import toast from "react-hot-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Loader2, Plus, PenLine, Trash2, Search, Filter } from "lucide-react"
@@ -82,11 +82,7 @@ export default function PointsCategoryItemsPage() {
       if (error) throw error
       setCategories(data || [])
     } catch (error: any) {
-      toast({
-        title: "خطأ في جلب فئات النقاط",
-        description: error.message,
-        variant: "destructive",
-      })
+      toast.error(error.message || "حدث خطأ أثناء جلب فئات النقاط. يرجى المحاولة مرة أخرى.")
     }
   }
 
@@ -124,11 +120,7 @@ export default function PointsCategoryItemsPage() {
       setCategoryItems(items)
       setFilteredItems(items)
     } catch (error: any) {
-      toast({
-        title: "خطأ في جلب بنود النقاط",
-        description: error.message,
-        variant: "destructive",
-      })
+      toast.error(error.message || "حدث خطأ أثناء جلب بنود النقاط. يرجى المحاولة مرة أخرى.")
     } finally {
       setIsLoading(false)
     }
@@ -220,11 +212,7 @@ export default function PointsCategoryItemsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.categoryId || !formData.name) {
-      toast({
-        title: "بيانات ناقصة",
-        description: "يرجى ملء جميع الحقول المطلوبة",
-        variant: "destructive",
-      })
+      toast.error("يرجى ملء جميع الحقول المطلوبة")
       return
     }
 
@@ -258,20 +246,13 @@ export default function PointsCategoryItemsPage() {
 
       if (result.error) throw result.error
 
-      toast({
-        title: selectedItem ? "تم تحديث البند بنجاح" : "تم إضافة البند بنجاح",
-        description: `تم ${selectedItem ? "تحديث" : "إضافة"} بند "${formData.name}" بنجاح`,
-      })
+      toast.success(selectedItem ? "تم تحديث البند بنجاح" : "تم إضافة البند بنجاح")
 
       resetForm()
       setIsFormOpen(false)
       fetchCategoryItems()
     } catch (error: any) {
-      toast({
-        title: "خطأ في حفظ البيانات",
-        description: error.message,
-        variant: "destructive",
-      })
+      toast.error(error.message || "حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مرة أخرى.")
     } finally {
       setIsSubmitting(false)
     }
@@ -290,19 +271,12 @@ export default function PointsCategoryItemsPage() {
 
       if (error) throw error
 
-      toast({
-        title: "تم حذف البند بنجاح",
-        description: `تم حذف بند النقاط "${selectedItem.name}" بنجاح`,
-      })
+      toast.success(`تم حذف بند النقاط "${selectedItem.name}" بنجاح`)
 
       setIsDeleteDialogOpen(false)
       fetchCategoryItems()
     } catch (error: any) {
-      toast({
-        title: "خطأ في حذف البيانات",
-        description: error.message,
-        variant: "destructive",
-      })
+      toast.error(error.message || "حدث خطأ أثناء حذف البيانات. يرجى المحاولة مرة أخرى.")
     } finally {
       setIsSubmitting(false)
     }

@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+import toast from "react-hot-toast";
 import { Loader2, Plus, TrendingUp, TrendingDown, Users, Award } from "lucide-react"
 import { MultiUserSelector } from "@/components/ui/multi-user-selector"
 import { getCurrentUser } from "@/lib/utils/auth-compat"
@@ -113,11 +113,7 @@ export default function PointsManagementPage() {
 
         if (categoriesError) {
           console.error("Error fetching categories:", categoriesError);
-          toast({
-            title: "خطأ في تحميل الفئات",
-            description: "حدث خطأ أثناء تحميل فئات النقاط",
-            variant: "destructive",
-          });
+          toast.error("حدث خطأ أثناء تحميل فئات النقاط");
         } else {
           setCategories(categoriesData || []);
         }
@@ -136,11 +132,7 @@ export default function PointsManagementPage() {
           setCategoryItems(itemsData || []);
         } catch (itemsError: any) {
           console.error("Error fetching category items:", itemsError);
-          toast({
-            title: "خطأ في تحميل بنود الفئات",
-            description: itemsError.message || "حدث خطأ أثناء تحميل بنود فئات النقاط",
-            variant: "destructive",
-          });
+          toast.error(itemsError.message || "حدث خطأ أثناء تحميل بنود فئات النقاط");
         }
 
         try {
@@ -179,11 +171,7 @@ export default function PointsManagementPage() {
         }
       } catch (error) {
         console.error("Error fetching data:", error)
-        toast({
-          title: "خطأ في تحميل البيانات",
-          description: "حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.",
-          variant: "destructive",
-        })
+          toast.error("حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.")
       } finally {
         setIsLoading(false)
       }
@@ -284,20 +272,12 @@ export default function PointsManagementPage() {
     try {
       // Add more detailed validation messages
       if (selectedUserIds.length === 0) {
-        toast({
-          title: "خطأ في البيانات",
-          description: "يرجى اختيار مستخدم واحد على الأقل",
-          variant: "destructive",
-        })
+        toast.error("يرجى اختيار مستخدم واحد على الأقل")
         return
       }
 
       if (!formData.points || formData.points <= 0) {
-        toast({
-          title: "خطأ في البيانات",
-          description: "يجب أن تكون قيمة النقاط أكبر من صفر",
-          variant: "destructive",
-        })
+        toast.error("يجب أن تكون قيمة النقاط أكبر من صفر")
         return
       }
 
@@ -342,11 +322,7 @@ export default function PointsManagementPage() {
         throw new Error(result.message || "حدث خطأ غير معروف أثناء إضافة النقاط")
       }
 
-      toast({
-        title: "تمت العملية بنجاح ✓",
-        description: result.message || "تمت إضافة/خصم النقاط للمستخدمين المحددين",
-        variant: "default",
-      })
+      toast.success(result.message || "تمت إضافة/خصم النقاط للمستخدمين المحددين")
 
       // Reset form
       setFormData({
@@ -362,28 +338,16 @@ export default function PointsManagementPage() {
 
       // Show additional info if there are missing user codes
       if (result.data?.missingUserCodes && result.data.missingUserCodes.length > 0) {
-        toast({
-          title: "تنبيه - بعض الرموز غير صالحة",
-          description: `لم يتم العثور على بعض رموز المستخدمين: ${result.data.missingUserCodes.join(", ")}`,
-          variant: "destructive",
-        })
+        toast.error(`لم يتم العثور على بعض رموز المستخدمين: ${result.data.missingUserCodes.join(", ")}`)
       }
       
       // Show additional info if points were successfully added
       if (result.data?.processedCount) {
-        toast({
-          title: "ملخص العملية",
-          description: `تم إضافة ${formData.isPositive ? "نقاط إيجابية" : "نقاط سلبية"} لـ ${result.data.processedCount} مستخدم بنجاح`,
-          variant: "default",
-        })
+        toast.success(`تم إضافة ${formData.isPositive ? "نقاط إيجابية" : "نقاط سلبية"} لـ ${result.data.processedCount} مستخدم بنجاح`)
       }
     } catch (error: any) {
       console.error("Error in handleSubmit:", error)
-      toast({
-        title: "فشلت العملية",
-        description: error.message || "حدث خطأ أثناء تنفيذ العملية. يرجى التحقق من البيانات والمحاولة مرة أخرى",
-        variant: "destructive",
-      })
+      toast.error(error.message || "حدث خطأ أثناء تنفيذ العملية. يرجى التحقق من البيانات والمحاولة مرة أخرى")
     } finally {
       setIsSubmitting(false)
     }
@@ -692,11 +656,7 @@ function PointsHistoryView() {
       setTransactions(data || [])
     } catch (error) {
       console.error("Error fetching transactions:", error)
-      toast({
-        title: "خطأ في تحميل البيانات",
-        description: "حدث خطأ أثناء تحميل سجل النقاط. يرجى المحاولة مرة أخرى.",
-        variant: "destructive",
-      })
+      toast.error("حدث خطأ أثناء تحميل سجل النقاط. يرجى المحاولة مرة أخرى.")
     } finally {
       setIsLoading(false)
     }
@@ -885,11 +845,7 @@ function RestrictionsManagementView() {
       setRestrictions(formattedData)
     } catch (error) {
       console.error("Error fetching restrictions:", error)
-      toast({
-        title: "خطأ في تحميل البيانات",
-        description: "حدث خطأ أثناء تحميل قيود النقاط. يرجى المحاولة مرة أخرى.",
-        variant: "destructive",
-      })
+      toast.error("حدث خطأ أثناء تحميل قيود النقاط. يرجى المحاولة مرة أخرى.")
     } finally {
       setIsLoading(false)
     }
@@ -929,20 +885,13 @@ function RestrictionsManagementView() {
         })
       }
       
-      toast({
-        title: "تم رفع القيد بنجاح",
-        description: "تم رفع قيد النقاط وإخطار الطالب بذلك.",
-      })
+      toast.success("تم رفع القيد بنجاح")
       
       // Refresh the list
       fetchRestrictions()
     } catch (error) {
       console.error("Error resolving restriction:", error)
-      toast({
-        title: "خطأ في رفع القيد",
-        description: "حدث خطأ أثناء محاولة رفع القيد. يرجى المحاولة مرة أخرى.",
-        variant: "destructive",
-      })
+      toast.error("حدث خطأ أثناء محاولة رفع القيد. يرجى المحاولة مرة أخرى.")
     } finally {
       setIsResolving(false)
       setSelectedRestriction(null)

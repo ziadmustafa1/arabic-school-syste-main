@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CardTitle, CardDescription, CardHeader, CardContent, CardFooter, Card } from "@/components/ui/card"
 import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react"
-import { toast } from "@/components/ui/use-toast"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createClient } from "@/lib/supabase/client"
+import toast from "react-hot-toast"
 
 // Create a client component for the login form
 function LoginForm() {
@@ -106,10 +106,7 @@ function LoginForm() {
       const redirectTo = dashboardPaths[userData.role_id as keyof typeof dashboardPaths] || "/"
       
       // Show success toast and redirect
-      toast({
-        title: "تم تسجيل الدخول بنجاح",
-        description: "جاري تحويلك إلى لوحة التحكم...",
-      })
+      toast.success("تم تسجيل الدخول بنجاح")
       
       // Redirect to dashboard
       router.push(redirectTo)

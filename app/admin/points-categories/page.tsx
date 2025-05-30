@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
+import toast from "react-hot-toast";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import {
   createCategory,
@@ -83,7 +83,6 @@ export default function PointsCategoriesPage() {
   const fetchCategories = async () => {
     setIsLoading(true);
     try {
-      // Use server action to fetch categories instead of client-side Supabase
       const result = await getCategories();
 
       if (!result.success) {
@@ -93,11 +92,7 @@ export default function PointsCategoriesPage() {
       setCategories(result.data || []);
     } catch (error: any) {
       console.error("Error fetching categories:", error);
-      toast({
-        title: "خطأ في جلب البيانات",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || "حدث خطأ في جلب البيانات");
     } finally {
       setIsLoading(false);
     }
@@ -179,20 +174,15 @@ export default function PointsCategoriesPage() {
         throw new Error(result.error || "حدث خطأ غير معروف");
       }
 
-      toast({
-        title: selectedCategory ? "تم تحديث الفئة بنجاح" : "تم إنشاء الفئة بنجاح",
-        description: `تم ${selectedCategory ? "تحديث" : "إنشاء"} فئة النقاط "${formData.name}" بنجاح`,
-      });
+      toast.success(
+        `تم ${selectedCategory ? "تحديث" : "إنشاء"} فئة النقاط "${formData.name}" بنجاح`
+      );
 
       setIsFormDialogOpen(false);
       fetchCategories();
     } catch (error: any) {
       console.error("Error in form submission:", error);
-      toast({
-        title: "خطأ في حفظ البيانات",
-        description: error.message || "حدث خطأ غير معروف أثناء حفظ البيانات",
-        variant: "destructive",
-      });
+      toast.error(error.message || "حدث خطأ غير معروف أثناء حفظ البيانات");
     } finally {
       setIsSubmitting(false);
     }
@@ -203,27 +193,33 @@ export default function PointsCategoriesPage() {
 
     setIsSubmitting(true);
     try {
+      // First check if category has any transactions
+      const { count, error: checkError } = await supabase
+        .from('points_transactions')
+        .select('*', { count: 'exact', head: true })
+        .eq('category_id', selectedCategory.id);
+
+      if (checkError) throw checkError;
+
+      if (count && count > 0) {
+        toast.error("لا يمكن حذف هذه الفئة لأنها مرتبطة بسجلات نقاط. يمكنك تعطيل الفئة بدلاً من حذفها.");
+        return;
+      }
+
       const result = await deleteCategory(selectedCategory.id);
 
       if (!result.success) {
         throw new Error(result.error || "حدث خطأ أثناء حذف الفئة");
       }
 
-      toast({
-        title: "تم حذف الفئة بنجاح",
-        description: `تم حذف فئة النقاط "${selectedCategory.name}" بنجاح`,
-      });
+      toast.success(`تم حذف فئة النقاط "${selectedCategory.name}" بنجاح`);
 
       setIsDeleteDialogOpen(false);
       setSelectedCategory(null);
       fetchCategories();
     } catch (error: any) {
       console.error("Error deleting category:", error);
-      toast({
-        title: "خطأ في حذف البيانات",
-        description: error.message || "حدث خطأ غير معروف أثناء حذف الفئة",
-        variant: "destructive",
-      });
+      toast.error(error.message || "حدث خطأ غير معروف أثناء حذف الفئة");
     } finally {
       setIsSubmitting(false);
     }
