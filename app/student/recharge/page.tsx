@@ -61,8 +61,8 @@ export default function RechargePointsPage() {
           .eq("student_id", userIdToUse)
           .single();
           
-        if (!pointsError && pointsData) {
-          console.log(`Using points from student_points table: ${pointsData.points}`)
+        if (!pointsError && pointsData && pointsData.points > 0) {
+          console.log("Points from student_points table:", pointsData.points)
           setCurrentPoints(pointsData.points)
           return
         } else {
@@ -79,7 +79,7 @@ export default function RechargePointsPage() {
           user_id_param: userIdToUse
         })
 
-        if (!error && data !== null) {
+        if (!error && data !== null && data > 0) {
           console.log("RPC points balance:", data)
           setCurrentPoints(data)
           
@@ -126,21 +126,23 @@ export default function RechargePointsPage() {
           const total = positivePoints - negativePoints
           console.log(`Direct calculation: ${positivePoints} positive - ${negativePoints} negative = ${total}`)
           
-          setCurrentPoints(total)
+          if (total > 0) {
+            setCurrentPoints(total)
             
-          // Use server action to update student_points table
-          try {
-            const updateResult = await updateStudentPoints(userIdToUse, total)
-            if (updateResult.success) {
-              console.log("Updated student_points table via server action:", total)
-            } else {
-              console.error("Failed to update student_points via server action:", updateResult.error)
+            // Use server action to update student_points table
+            try {
+              const updateResult = await updateStudentPoints(userIdToUse, total)
+              if (updateResult.success) {
+                console.log("Updated student_points table via server action:", total)
+              } else {
+                console.error("Failed to update student_points via server action:", updateResult.error)
+              }
+            } catch (updateErr) {
+              console.error("Error calling updateStudentPoints:", updateErr)
             }
-          } catch (updateErr) {
-            console.error("Error calling updateStudentPoints:", updateErr)
-          }
             
-          return
+            return
+          }
         } else {
           console.error("Error with direct calculation:", txError)
         }
@@ -157,7 +159,7 @@ export default function RechargePointsPage() {
           const result = await response.json()
           console.log("API result:", result)
           
-          if (result.success) {
+          if (result.success && result.totalPoints > 0) {
             setCurrentPoints(result.totalPoints)
             return
           }
