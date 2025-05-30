@@ -861,8 +861,7 @@ function RestrictionsManagementView() {
           is_resolved,
           created_by,
           users:user_id(full_name, user_code),
-          point_categories:category_id(name),
-          point_category_items(id, name)
+          point_categories:category_id(name)
         `)
         .eq("is_resolved", false)
         .order("created_at", { ascending: false })
@@ -870,7 +869,7 @@ function RestrictionsManagementView() {
       if (error) throw error
 
       // Transform the data for easier rendering
-      const formattedData: RestrictedPoint[] = (data || []).map((item: any) => ({
+      const formattedData = data?.map(item => ({
         id: item.id,
         user_id: item.user_id,
         category_id: item.category_id,
@@ -880,9 +879,8 @@ function RestrictionsManagementView() {
         created_by: item.created_by,
         user_full_name: item.users?.full_name || "غير معروف",
         user_code: item.users?.user_code || "غير معروف",
-        category_name: item.point_categories?.name || "غير معروف",
-        point_category_items: item.point_category_items || []
-      }))
+        category_name: item.point_categories?.name || "غير معروف"
+      })) || []
 
       setRestrictions(formattedData)
     } catch (error) {
@@ -927,7 +925,7 @@ function RestrictionsManagementView() {
         await supabase.from("notifications").insert({
           user_id: restrictionData.user_id,
           title: "تم رفع القيد",
-          content: `تم رفع القيد عن ${restrictionData.points} نقطة من فئة "${(restrictionData as any).point_categories?.name || ''}" ويمكنك الآن دفع هذه النقاط.`
+          content: `تم رفع القيد عن ${restrictionData.points} نقطة من فئة "${restrictionData.point_categories?.name || ''}" ويمكنك الآن دفع هذه النقاط.`
         })
       }
       
@@ -988,26 +986,24 @@ function RestrictionsManagementView() {
               <table className="w-full text-sm">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="p-2 sm:p-3 text-center">الطالب</th>
-                    <th className="p-2 sm:p-3 text-center">فئة النقاط</th>
-                    <th className="p-2 sm:p-3 text-center">البند</th>
-                    <th className="p-2 sm:p-3 text-center">النقاط</th>
-                    <th className="p-2 sm:p-3 text-center hidden sm:table-cell">تاريخ القيد</th>
-                    <th className="p-2 sm:p-3 text-center">الإجراءات</th>
+                    <th className="p-2 sm:p-3 text-right">الطالب</th>
+                    <th className="p-2 sm:p-3 text-right">فئة النقاط</th>
+                    <th className="p-2 sm:p-3 text-right">النقاط</th>
+                    <th className="p-2 sm:p-3 text-right hidden sm:table-cell">تاريخ القيد</th>
+                    <th className="p-2 sm:p-3 text-right">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
                   {restrictions.map((restriction) => (
                     <tr key={restriction.id} className="border-t">
-                      <td className="p-2 sm:p-3 text-start">
+                      <td className="p-2 sm:p-3">
                         <div className="font-medium text-sm">{restriction.user_full_name}</div>
                         <div className="text-xs text-muted-foreground">{restriction.user_code}</div>
                       </td>
-                      <td className="p-2 sm:p-3 text-sm text-center">{restriction.category_name}</td>
-                      <td className="p-2 sm:p-3 text-sm text-center">{restriction.point_category_items?.[0]?.name || "-"}</td>
-                      <td className="p-2 sm:p-3 text-destructive font-medium text-center">{restriction.points}</td>
-                      <td className="p-2 sm:p-3 text-xs sm:text-sm text-center hidden sm:table-cell">{formatDate(restriction.created_at)}</td>
-                      <td className="p-2 sm:p-3 text-center">
+                      <td className="p-2 sm:p-3 text-sm">{restriction.category_name}</td>
+                      <td className="p-2 sm:p-3 text-destructive font-medium">{restriction.points}</td>
+                      <td className="p-2 sm:p-3 text-xs sm:text-sm hidden sm:table-cell">{formatDate(restriction.created_at)}</td>
+                      <td className="p-2 sm:p-3">
                         <Button 
                           size="sm" 
                           onClick={() => resolveRestriction(restriction.id)}
@@ -1035,3 +1031,4 @@ function RestrictionsManagementView() {
     </Card>
   )
 }
+

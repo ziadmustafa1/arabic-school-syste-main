@@ -37,7 +37,14 @@ export default function NotificationsPage() {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [databaseError, setDatabaseError] = useState<boolean>(false)
   const [userIsAdmin, setUserIsAdmin] = useState<boolean>(false)
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  
+  interface CurrentUser {
+    id: string;
+    role_id?: number;
+    [key: string]: any;
+  }
+  
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const supabase = createClient()
 
   // Add check for student role
@@ -46,67 +53,56 @@ export default function NotificationsPage() {
   }, [currentUser?.role_id])
 
   useEffect(() => {
-    // Get current user
+    // Get current user and initialize data
     async function initUser() {
-      const userData = await getCurrentUser()
-      if (userData) {
-        setCurrentUser(userData)
+      try {
+        const userData = await getCurrentUser()
+        if (userData) {
+          setCurrentUser(userData)
+          
+          // Load user role first
+          const { data: roleData } = await supabase
+            .from('users')
+            .select('role_id')
+            .eq('id', userData.id)
+            .single()
+            
+          if (roleData) {
+            setCurrentUser((prev: CurrentUser | null) => prev ? {
+              ...prev,
+              role_id: roleData.role_id
+            } : null)
+            
+            if (roleData.role_id === 4) {
+              setUserIsAdmin(true)
+            }
+          }
+          
+          // Then fetch notifications
+          await fetchNotifications()
+        }
+      } catch (error) {
+        console.error("Error initializing user:", error)
+      } finally {
+        setLoading(false)
       }
     }
     
     initUser()
-  }, [])
-
-  useEffect(() => {
-    if (currentUser?.id) {
-      fetchNotifications()
-      loadUserRole()
-    }
-  }, [currentUser])
-
-  async function loadUserRole() {
-    if (!currentUser?.id) return
-
-    try {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role_id')
-        .eq('id', currentUser.id)
-        .single()
-        
-      if (userData?.role_id === 4) { // Assuming 4 is admin role
-        setUserIsAdmin(true)
-      }
-
-      // Store user's role in state for checking permissions
-      if (userData) {
-        setCurrentUser((prev: any) => ({
-          ...prev,
-          role_id: userData.role_id
-        }))
-      }
-    } catch (error) {
-      console.error("Error checking user role:", error)
-    }
-  }
+  }, []) // Remove currentUser dependency
 
   async function fetchNotifications() {
     if (!currentUser?.id) return
 
-    setLoading(true)
     try {
       // First try to use the proper API
-      try {
-        const result = await getUserNotifications()
-        if (result.success) {
-          setNotifications(result.data || [])
-          return
-        }
-      } catch (apiError) {
-        console.error("API method failed:", apiError)
+      const result = await getUserNotifications()
+      if (result.success) {
+        setNotifications(result.data || [])
+        return
       }
       
-      // Fallback to direct Supabase query
+      // Fallback to direct Supabase query if API fails
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -116,7 +112,6 @@ export default function NotificationsPage() {
       if (error) {
         console.error("Error fetching notifications:", error)
         
-        // Check if this is the specific database function error
         if (error.message && (
             error.message.includes('exec_sql') || 
             error.message.includes('function') && error.message.includes('does not exist')
@@ -131,8 +126,6 @@ export default function NotificationsPage() {
     } catch (error) {
       console.error("Error in fetch notifications:", error)
       setNotifications([])
-    } finally {
-      setLoading(false)
     }
   }
 
